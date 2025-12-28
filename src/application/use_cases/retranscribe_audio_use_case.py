@@ -91,7 +91,7 @@ class RetranscribeAudioUseCase:
             saved_transcription.complete(
                 text=result['text'],
                 language=result['language'],
-                duration_seconds=result.get('duration', audio_file.duration_seconds or 0.0)
+                duration=result.get('duration', audio_file.duration_seconds or 0.0)
             )
         except Exception as e:
             saved_transcription.fail(str(e))
