@@ -147,10 +147,11 @@ class TranscribeAudioUseCase:
             )
 
             # Update transcription with results
+            # Note: Don't pass duration from Whisper as we already have the correct
+            # duration from the audio file extraction
             saved_transcription.complete(
                 text=result['text'],
-                language=result['language'],
-                duration=result.get('duration', 0.0)
+                language=result['language']
             )
 
         except Exception as e:
