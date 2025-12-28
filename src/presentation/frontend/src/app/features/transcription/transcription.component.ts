@@ -268,8 +268,10 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     // Update active transcription
     this.activeTranscription = transcription;
 
-    // Update URL without reloading the page
-    this.router.navigate(['/transcription', transcription.id], { replaceUrl: true });
+    // Update URL without triggering navigation/reload
+    // Using location.replaceState to avoid component re-initialization
+    const url = this.router.createUrlTree(['/transcription', transcription.id]).toString();
+    window.history.replaceState({}, '', url);
   }
 
   /**
