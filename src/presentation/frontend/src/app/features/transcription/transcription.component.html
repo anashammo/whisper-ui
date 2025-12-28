@@ -150,7 +150,7 @@
             [disabled]="isRetranscribing"
           >
             <option *ngFor="let model of availableModels" [value]="model">
-              {{ model }} {{ allTranscriptions.find(t => t.model === model) ? '(already transcribed)' : '' }}
+              {{ model }} {{ isModelAlreadyTranscribed(model) ? '(already transcribed)' : '' }}
             </option>
           </select>
         </div>

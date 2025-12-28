@@ -300,11 +300,12 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Re-transcription failed:', err);
-        this.error = err.error?.detail || 'Failed to start re-transcription';
+        const errorMessage = err.error?.detail || 'Failed to start re-transcription';
+        this.error = errorMessage;
         this.isRetranscribing = false;
 
         this.popupService.error(
-          this.error
+          errorMessage
         ).pipe(takeUntil(this.destroy$)).subscribe();
       }
     });
@@ -316,6 +317,13 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   getModelsNotYetTranscribed(): string[] {
     const usedModels = this.allTranscriptions.map(t => t.model).filter(m => m !== null) as string[];
     return this.availableModels.filter(m => !usedModels.includes(m));
+  }
+
+  /**
+   * Check if a model has already been transcribed
+   */
+  isModelAlreadyTranscribed(model: string): boolean {
+    return this.allTranscriptions.some(t => t.model === model);
   }
 
   /**
