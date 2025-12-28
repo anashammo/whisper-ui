@@ -1,18 +1,18 @@
 <div class="transcription-container">
   <!-- Loading State -->
-  <div class="loading-state" *ngIf="isLoading && !transcription">
+  <div class="loading-state" *ngIf="isLoading && !activeTranscription">
     <div class="spinner"></div>
     <h3>Loading transcription...</h3>
   </div>
 
   <!-- Error State -->
-  <div class="error-message" *ngIf="error">
+  <div class="error-message" *ngIf="error && !activeTranscription">
     <span>⚠️ {{ error }}</span>
     <button class="btn btn-primary" (click)="goToUpload()">Go Back</button>
   </div>
 
   <!-- Transcription Detail -->
-  <div class="transcription-detail" *ngIf="transcription && !isLoading">
+  <div class="transcription-detail" *ngIf="activeTranscription && !isLoading">
     <!-- Header -->
     <div class="header">
       <h1>Transcription Details</h1>
@@ -22,54 +22,79 @@
       </div>
     </div>
 
+    <!-- Model Tabs (Show when multiple transcriptions exist) -->
+    <div class="model-tabs" *ngIf="allTranscriptions.length > 1">
+      <button
+        *ngFor="let trans of allTranscriptions"
+        class="tab-button"
+        [class.active]="activeTranscription.id === trans.id"
+        (click)="switchTranscription(trans)"
+        [title]="'Switch to ' + (trans.model || 'unknown') + ' model transcription'"
+      >
+        <span class="tab-icon">🤖</span>
+        <span class="tab-label">{{ trans.model || 'unknown' }}</span>
+        <span class="tab-status" [ngClass]="transcriptionService.getStatusClass(trans.status)"></span>
+      </button>
+    </div>
+
+    <!-- Re-transcribe Button -->
+    <div class="retranscribe-section" *ngIf="getModelsNotYetTranscribed().length > 0">
+      <button class="btn btn-retranscribe" (click)="openRetranscribeDialog()">
+        ➕ Transcribe with Different Model
+      </button>
+      <span class="retranscribe-hint">
+        {{ getModelsNotYetTranscribed().length }} model(s) available
+      </span>
+    </div>
+
     <!-- Status Card -->
     <div class="status-card">
       <div class="status-header">
-        <span class="status-badge" [ngClass]="transcriptionService.getStatusClass(transcription.status)">
-          {{ transcription.status }}
+        <span class="status-badge" [ngClass]="transcriptionService.getStatusClass(activeTranscription.status)">
+          {{ activeTranscription.status }}
         </span>
-        <span class="timestamp">{{ formatDate(transcription.created_at) }}</span>
+        <span class="timestamp">{{ formatDate(activeTranscription.created_at) }}</span>
       </div>
 
       <div class="metadata">
         <div class="metadata-item">
           <span class="label">ID:</span>
-          <span class="value">{{ transcription.id }}</span>
+          <span class="value">{{ activeTranscription.id }}</span>
         </div>
-        <div class="metadata-item" *ngIf="transcription.language">
+        <div class="metadata-item" *ngIf="activeTranscription.language">
           <span class="label">Language:</span>
-          <span class="value">{{ transcription.language }}</span>
+          <span class="value">{{ activeTranscription.language }}</span>
         </div>
-        <div class="metadata-item" *ngIf="transcription.model">
+        <div class="metadata-item" *ngIf="activeTranscription.model">
           <span class="label">Model:</span>
-          <span class="value">{{ transcription.model }}</span>
+          <span class="value">{{ activeTranscription.model }}</span>
         </div>
         <div class="metadata-item">
           <span class="label">Duration:</span>
-          <span class="value">{{ transcriptionService.formatDuration(transcription.duration_seconds) }}</span>
+          <span class="value">{{ transcriptionService.formatDuration(activeTranscription.duration_seconds) }}</span>
         </div>
-        <div class="metadata-item" *ngIf="transcription.completed_at">
+        <div class="metadata-item" *ngIf="activeTranscription.completed_at">
           <span class="label">Completed:</span>
-          <span class="value">{{ formatDate(transcription.completed_at) }}</span>
+          <span class="value">{{ formatDate(activeTranscription.completed_at) }}</span>
         </div>
       </div>
     </div>
 
     <!-- Processing State -->
-    <div class="processing-state" *ngIf="transcription.status === TranscriptionStatus.PROCESSING || transcription.status === TranscriptionStatus.PENDING">
+    <div class="processing-state" *ngIf="activeTranscription.status === TranscriptionStatus.PROCESSING || activeTranscription.status === TranscriptionStatus.PENDING">
       <div class="spinner"></div>
       <h3>Transcription in progress...</h3>
       <p>Please wait while we process your audio. This page will update automatically.</p>
     </div>
 
     <!-- Error State -->
-    <div class="error-state" *ngIf="transcription.status === TranscriptionStatus.FAILED">
+    <div class="error-state" *ngIf="activeTranscription.status === TranscriptionStatus.FAILED">
       <h3>❌ Transcription Failed</h3>
-      <p class="error-text">{{ transcription.error_message }}</p>
+      <p class="error-text">{{ activeTranscription.error_message }}</p>
     </div>
 
     <!-- Completed State -->
-    <div class="completed-state" *ngIf="transcription.status === TranscriptionStatus.COMPLETED && transcription.text">
+    <div class="completed-state" *ngIf="activeTranscription.status === TranscriptionStatus.COMPLETED && activeTranscription.text">
       <div class="text-header">
         <h3>Transcription Result</h3>
         <div class="text-actions">
@@ -91,13 +116,64 @@
 
       <textarea
         class="transcription-text-editable"
-        [(ngModel)]="transcription.text"
+        [(ngModel)]="activeTranscription.text"
         placeholder="Transcribed text will appear here..."
         rows="15"
       ></textarea>
 
       <div class="word-count">
-        Word count: {{ transcription.text ? transcription.text.split(' ').length : 0 }} | Characters: {{ transcription.text ? transcription.text.length : 0 }}
+        Word count: {{ activeTranscription.text ? activeTranscription.text.split(' ').length : 0 }} | Characters: {{ activeTranscription.text ? activeTranscription.text.length : 0 }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Re-transcription Modal -->
+  <div class="modal-overlay" *ngIf="showRetranscribeDialog" (click)="closeRetranscribeDialog()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Transcribe with Different Model</h2>
+        <button class="modal-close" (click)="closeRetranscribeDialog()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-description">
+          Select a Whisper model to create a new transcription of this audio file.
+          Each model offers different trade-offs between speed and accuracy.
+        </p>
+
+        <div class="form-group">
+          <label for="model-select">Select Model:</label>
+          <select
+            id="model-select"
+            class="model-select"
+            [(ngModel)]="selectedModel"
+            [disabled]="isRetranscribing"
+          >
+            <option *ngFor="let model of availableModels" [value]="model">
+              {{ model }} {{ allTranscriptions.find(t => t.model === model) ? '(already transcribed)' : '' }}
+            </option>
+          </select>
+        </div>
+
+        <div class="model-info">
+          <h4>Model Information:</h4>
+          <ul>
+            <li><strong>tiny:</strong> Fastest, least accurate (39M params)</li>
+            <li><strong>base:</strong> Fast, good for most uses (74M params)</li>
+            <li><strong>small:</strong> Balanced speed and accuracy (244M params)</li>
+            <li><strong>medium:</strong> Better accuracy, slower (769M params)</li>
+            <li><strong>large:</strong> Best accuracy, slowest (1550M params)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeRetranscribeDialog()" [disabled]="isRetranscribing">
+          Cancel
+        </button>
+        <button class="btn btn-primary" (click)="submitRetranscription()" [disabled]="isRetranscribing">
+          {{ isRetranscribing ? 'Starting...' : 'Start Transcription' }}
+        </button>
       </div>
     </div>
   </div>

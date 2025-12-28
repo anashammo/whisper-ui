@@ -15,12 +15,20 @@ import { PopupService } from '../../shared/services/popup.service';
   styleUrls: ['./transcription.component.css']
 })
 export class TranscriptionComponent implements OnInit, OnDestroy {
-  transcription: Transcription | null = null;
+  transcription: Transcription | null = null; // Currently loaded transcription (from route)
+  allTranscriptions: Transcription[] = []; // All transcriptions for this audio file
+  activeTranscription: Transcription | null = null; // Currently selected tab
   isLoading: boolean = false;
   error: string | null = null;
   private destroy$ = new Subject<void>();
   isPlayingAudio: boolean = false;
   currentAudio: HTMLAudioElement | null = null;
+
+  // Re-transcription modal state
+  showRetranscribeDialog: boolean = false;
+  selectedModel: string = 'base';
+  availableModels: string[] = ['tiny', 'base', 'small', 'medium', 'large'];
+  isRetranscribing: boolean = false;
 
   // Expose enum to template
   TranscriptionStatus = TranscriptionStatus;
@@ -46,6 +54,16 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((transcription) => {
         this.transcription = transcription;
+
+        // When initial transcription loads, load all transcriptions for this audio file
+        if (transcription && this.allTranscriptions.length === 0) {
+          this.loadAllTranscriptions(transcription.audio_file_id);
+        }
+
+        // Set as active transcription if not already set
+        if (transcription && !this.activeTranscription) {
+          this.activeTranscription = transcription;
+        }
       });
 
     // Subscribe to loading state
@@ -92,8 +110,8 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (!this.transcription?.id) {
-      console.error('No transcription ID available');
+    if (!this.activeTranscription?.id) {
+      console.error('No active transcription ID available');
       return;
     }
 
@@ -103,7 +121,7 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       this.currentAudio.currentTime = 0;
     }
 
-    const audioUrl = this.transcriptionService.getAudioUrl(this.transcription.id);
+    const audioUrl = this.transcriptionService.getAudioUrl(this.activeTranscription.id);
     console.log('Playing audio from:', audioUrl);
 
     this.currentAudio = new Audio(audioUrl);
@@ -157,8 +175,8 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
    * Copy transcription text to clipboard
    */
   copyToClipboard(): void {
-    if (this.transcription?.text) {
-      navigator.clipboard.writeText(this.transcription.text).then(() => {
+    if (this.activeTranscription?.text) {
+      navigator.clipboard.writeText(this.activeTranscription.text).then(() => {
         // Use custom success popup instead of browser alert
         this.popupService.success('Transcription copied to clipboard!')
           .pipe(takeUntil(this.destroy$))
@@ -171,15 +189,133 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
    * Download transcription as text file
    */
   downloadText(): void {
-    if (!this.transcription?.text) return;
+    if (!this.activeTranscription?.text) return;
 
-    const blob = new Blob([this.transcription.text], { type: 'text/plain' });
+    const blob = new Blob([this.activeTranscription.text], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `transcription-${this.transcription.id}.txt`;
+    link.download = `transcription-${this.activeTranscription.id}.txt`;
     link.click();
     window.URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Load all transcriptions for an audio file
+   */
+  private loadAllTranscriptions(audioFileId: string): void {
+    this.transcriptionService.loadAudioFileTranscriptions(audioFileId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (transcriptions) => {
+          this.allTranscriptions = transcriptions;
+          // Update active transcription to match current transcription in the list
+          if (this.transcription) {
+            const current = transcriptions.find(t => t.id === this.transcription!.id);
+            if (current) {
+              this.activeTranscription = current;
+            }
+          }
+        },
+        error: (err) => {
+          console.error('Failed to load all transcriptions:', err);
+          // Still keep the single transcription if loading all fails
+        }
+      });
+  }
+
+  /**
+   * Switch to a different transcription tab
+   */
+  switchTranscription(transcription: Transcription): void {
+    // Stop any playing audio
+    this.stopAudio();
+
+    // Update active transcription
+    this.activeTranscription = transcription;
+
+    // Update URL without reloading the page
+    this.router.navigate(['/transcription', transcription.id], { replaceUrl: true });
+  }
+
+  /**
+   * Open re-transcription dialog
+   */
+  openRetranscribeDialog(): void {
+    // Set default model to one not yet used
+    const usedModels = this.allTranscriptions.map(t => t.model).filter(m => m !== null) as string[];
+    const unused = this.availableModels.find(m => !usedModels.includes(m));
+    this.selectedModel = unused || 'base';
+
+    this.showRetranscribeDialog = true;
+  }
+
+  /**
+   * Close re-transcription dialog
+   */
+  closeRetranscribeDialog(): void {
+    this.showRetranscribeDialog = false;
+    this.selectedModel = 'base';
+    this.isRetranscribing = false;
+  }
+
+  /**
+   * Submit re-transcription request
+   */
+  submitRetranscription(): void {
+    if (!this.activeTranscription || !this.selectedModel) {
+      return;
+    }
+
+    // Check if this model already exists
+    const existingModel = this.allTranscriptions.find(t => t.model === this.selectedModel);
+    if (existingModel) {
+      this.popupService.alert(
+        'Model Already Used',
+        `A transcription with model "${this.selectedModel}" already exists. Please select a different model.`
+      ).pipe(takeUntil(this.destroy$)).subscribe();
+      return;
+    }
+
+    this.isRetranscribing = true;
+    this.error = null;
+
+    this.transcriptionService.retranscribeAudio(
+      this.activeTranscription.audio_file_id,
+      this.selectedModel,
+      this.activeTranscription.language || undefined
+    ).pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (newTranscription) => {
+        // Add to all transcriptions list
+        this.allTranscriptions.push(newTranscription);
+        // Switch to new transcription tab
+        this.switchTranscription(newTranscription);
+        // Close dialog
+        this.closeRetranscribeDialog();
+
+        this.popupService.success(
+          `Transcription with model "${this.selectedModel}" started successfully!`
+        ).pipe(takeUntil(this.destroy$)).subscribe();
+      },
+      error: (err) => {
+        console.error('Re-transcription failed:', err);
+        this.error = err.error?.detail || 'Failed to start re-transcription';
+        this.isRetranscribing = false;
+
+        this.popupService.error(
+          this.error
+        ).pipe(takeUntil(this.destroy$)).subscribe();
+      }
+    });
+  }
+
+  /**
+   * Get list of models not yet transcribed
+   */
+  getModelsNotYetTranscribed(): string[] {
+    const usedModels = this.allTranscriptions.map(t => t.model).filter(m => m !== null) as string[];
+    return this.availableModels.filter(m => !usedModels.includes(m));
   }
 
   /**

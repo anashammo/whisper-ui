@@ -267,3 +267,254 @@
   color: #a0aec0;
   font-size: 0.875rem;
 }
+
+/* Model Tabs Styles */
+.model-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background-color: #2d3748;
+  border-radius: 12px;
+  border: 1px solid #4a5568;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background-color: #1a202c;
+  border: 2px solid #4a5568;
+  border-radius: 8px;
+  color: #a0aec0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab-button:hover {
+  background-color: #2d3748;
+  border-color: #4299e1;
+  color: #e2e8f0;
+}
+
+.tab-button.active {
+  background-color: #2c5282;
+  border-color: #4299e1;
+  color: #90cdf4;
+}
+
+.tab-icon {
+  font-size: 1rem;
+}
+
+.tab-label {
+  text-transform: capitalize;
+}
+
+.tab-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 0.25rem;
+}
+
+/* Re-transcribe Section */
+.retranscribe-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background-color: #2d3748;
+  border-radius: 8px;
+  border: 1px dashed #4a5568;
+}
+
+.btn-retranscribe {
+  padding: 0.75rem 1.5rem;
+  background-color: #2c5282;
+  border: 2px solid #4299e1;
+  border-radius: 8px;
+  color: #90cdf4;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-retranscribe:hover {
+  background-color: #4299e1;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.retranscribe-hint {
+  color: #a0aec0;
+  font-size: 0.875rem;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+}
+
+.modal-content {
+  background-color: #2d3748;
+  border: 2px solid #4a5568;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #4a5568;
+}
+
+.modal-header h2 {
+  color: #f7fafc;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+  color: #fc8181;
+}
+
+.modal-body {
+  padding: 2rem;
+}
+
+.modal-description {
+  color: #cbd5e0;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  color: #e2e8f0;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.model-select {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #1a202c;
+  border: 2px solid #4a5568;
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.model-select:focus {
+  outline: none;
+  border-color: #4299e1;
+}
+
+.model-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.model-info {
+  background-color: #1a202c;
+  border: 1px solid #4a5568;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.model-info h4 {
+  color: #e2e8f0;
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+
+.model-info ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.model-info li {
+  color: #cbd5e0;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #2d3748;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.model-info li:last-child {
+  border-bottom: none;
+}
+
+.model-info strong {
+  color: #4299e1;
+  font-weight: 600;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #4a5568;
+}
+
+@media (max-width: 768px) {
+  .model-tabs {
+    flex-direction: column;
+  }
+
+  .tab-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .retranscribe-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .modal-content {
+    max-height: 95vh;
+  }
+}

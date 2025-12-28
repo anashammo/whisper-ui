@@ -5,6 +5,10 @@ A professional voice-to-text transcription system using OpenAI Whisper, built wi
 ## Recent Updates
 
 **Latest Features (December 2025):**
+- 🎭 **Multiple Model Transcriptions**: Transcribe the same audio file with different Whisper models and compare results
+- 📂 **Grouped History View**: Audio files grouped with expandable sections showing all transcriptions per file
+- 🔄 **Re-transcription Support**: Re-transcribe existing audio files with different models without re-uploading
+- 🏷️ **Model Tabs**: Switch between different model transcriptions with intuitive tabbed interface
 - ✨ **Real-time Model Download Progress**: Visual progress bar showing actual download percentage (0-100%) when downloading new Whisper models
 - 🤖 **Model Name Display**: See which Whisper model was used for each transcription in history and details views
 - 📝 **Editable Transcriptions**: Edit transcription text directly in the UI
@@ -12,6 +16,7 @@ A professional voice-to-text transcription system using OpenAI Whisper, built wi
 - ▶️ **Audio Playback Controls**: Play/stop original audio with intuitive controls
 - 🗑️ **Delete Functionality**: Remove transcriptions and associated audio files
 - 🎛️ **Server Management Scripts**: Convenient Python scripts to start/stop backend and frontend servers
+- ©️ **Copyright Footer**: Professional footer with links to this repository and OpenAI Whisper
 
 ## Features
 
@@ -24,6 +29,10 @@ A professional voice-to-text transcription system using OpenAI Whisper, built wi
 - **On-Premises Deployment**: All data stored locally, no cloud dependencies
 
 ### Frontend Features
+- **Multiple Model Transcriptions**: Transcribe the same audio file with different models and compare results
+- **Grouped History View**: Audio files grouped with expandable sections showing all transcriptions
+- **Model Tabs**: Switch between different model transcriptions with tabbed interface
+- **Re-transcription Dialog**: Re-transcribe existing audio files with different models
 - **Browser Audio Recording**: Record audio directly from your microphone (up to 30 seconds)
 - **File Upload**: Drag & drop audio file upload with preview
 - **Editable Transcriptions**: Edit transcription text directly in the UI
@@ -32,6 +41,8 @@ A professional voice-to-text transcription system using OpenAI Whisper, built wi
 - **Real-time Download Progress**: Visual progress bar when downloading new models
 - **Model Name Display**: See which model was used for each transcription
 - **Delete Functionality**: Remove transcriptions and associated audio files
+- **Custom Popups**: Professional modal dialogs for confirmations and alerts
+- **Copyright Footer**: Footer with repository links on all pages
 - **Dark Mode UI**: Modern, clean interface with dark theme
 
 ## Architecture
@@ -252,6 +263,72 @@ Response: 204 No Content
 GET /api/v1/transcriptions/{transcription_id}/audio
 
 Response: Audio file (binary stream)
+```
+
+### Audio File Endpoints
+
+#### Re-transcribe Existing Audio File
+```http
+POST /api/v1/audio-files/{audio_file_id}/transcriptions?model={model}&language={language}
+
+Parameters:
+- audio_file_id: ID of the existing audio file (required, path parameter)
+- model: Whisper model (required, query parameter, options: tiny/base/small/medium/large)
+- language: Language code (optional, query parameter, e.g., 'en', 'es')
+
+Response:
+{
+  "id": "770e8400-e29b-41d4-a716-446655440002",
+  "audio_file_id": "660e8400-e29b-41d4-a716-446655440001",
+  "text": null,
+  "status": "pending",
+  "language": "en",
+  "model": "medium",
+  "duration_seconds": 45.3,
+  "created_at": "2025-12-28T10:35:00Z",
+  "completed_at": null
+}
+
+Notes:
+- If a completed transcription with the same model already exists, returns the existing one
+- Transcription status will be "pending" or "processing" initially
+- Poll GET /api/v1/transcriptions/{id} to check completion status
+```
+
+#### Get All Transcriptions for Audio File
+```http
+GET /api/v1/audio-files/{audio_file_id}/transcriptions
+
+Response:
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "audio_file_id": "660e8400-e29b-41d4-a716-446655440001",
+    "text": "Transcribed text here...",
+    "status": "completed",
+    "language": "en",
+    "model": "base",
+    "duration_seconds": 45.3,
+    "created_at": "2025-12-28T10:30:00Z",
+    "completed_at": "2025-12-28T10:30:15Z"
+  },
+  {
+    "id": "770e8400-e29b-41d4-a716-446655440002",
+    "audio_file_id": "660e8400-e29b-41d4-a716-446655440001",
+    "text": "Transcribed text here...",
+    "status": "completed",
+    "language": "en",
+    "model": "medium",
+    "duration_seconds": 45.3,
+    "created_at": "2025-12-28T10:35:00Z",
+    "completed_at": "2025-12-28T10:35:25Z"
+  }
+]
+
+Notes:
+- Returns all transcriptions for the specified audio file
+- Sorted by created_at DESC (newest first)
+- Raises 404 if audio file not found
 ```
 
 ### Model Management Endpoints

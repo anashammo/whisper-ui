@@ -6,7 +6,7 @@
   </div>
 
   <!-- Loading State -->
-  <div class="loading-state" *ngIf="isLoading && transcriptions.length === 0">
+  <div class="loading-state" *ngIf="isLoading && audioFilesWithTranscriptions.length === 0">
     <div class="spinner"></div>
     <h3>Loading history...</h3>
   </div>
@@ -18,69 +18,96 @@
   </div>
 
   <!-- Empty State -->
-  <div class="empty-state" *ngIf="!isLoading && transcriptions.length === 0 && !error">
+  <div class="empty-state" *ngIf="!isLoading && audioFilesWithTranscriptions.length === 0 && !error">
     <div class="empty-icon">📝</div>
     <h3>No transcriptions yet</h3>
     <p>Click "New Transcription" above to get started!</p>
   </div>
 
-  <!-- Transcription List -->
-  <div class="transcription-list" *ngIf="transcriptions.length > 0">
+  <!-- Grouped Audio File List -->
+  <div class="audio-file-list" *ngIf="audioFilesWithTranscriptions.length > 0">
     <div
-      *ngFor="let transcription of transcriptions"
-      class="transcription-card"
-      (click)="viewTranscription(transcription.id)"
+      *ngFor="let audioFileGroup of audioFilesWithTranscriptions"
+      class="audio-file-card"
     >
-      <div class="card-header">
-        <span class="status-badge" [ngClass]="transcriptionService.getStatusClass(transcription.status)">
-          {{ transcription.status }}
-        </span>
-        <span class="timestamp">{{ formatDate(transcription.created_at) }}</span>
+      <!-- Audio File Header (Clickable to Expand/Collapse) -->
+      <div class="audio-file-header" (click)="toggleExpanded(audioFileGroup.audio_file.id)">
+        <div class="audio-file-info">
+          <h3 class="audio-filename">{{ audioFileGroup.audio_file.original_filename }}</h3>
+          <div class="audio-metadata">
+            <span class="metadata-badge">
+              📊 {{ audioFileGroup.transcription_count }} transcription(s)
+            </span>
+            <span class="metadata-badge" *ngIf="audioFileGroup.audio_file.duration_seconds">
+              ⏱️ {{ transcriptionService.formatDuration(audioFileGroup.audio_file.duration_seconds) }}
+            </span>
+            <span class="metadata-badge">
+              📅 {{ formatDate(audioFileGroup.audio_file.uploaded_at) }}
+            </span>
+          </div>
+        </div>
+        <button class="expand-button" [class.expanded]="isExpanded(audioFileGroup.audio_file.id)">
+          {{ isExpanded(audioFileGroup.audio_file.id) ? '▼' : '▶' }}
+        </button>
       </div>
 
-      <div class="card-content">
-        <div class="transcription-preview">
-          {{ getTruncatedText(transcription.text) }}
-        </div>
-
-        <div class="card-metadata">
-          <span class="metadata-item" *ngIf="transcription.language">
-            🌐 {{ transcription.language }}
-          </span>
-          <span class="metadata-item" *ngIf="transcription.model">
-            🤖 {{ transcription.model }}
-          </span>
-          <span class="metadata-item">
-            ⏱️ {{ transcriptionService.formatDuration(transcription.duration_seconds) }}
-          </span>
-        </div>
-      </div>
-
-      <div class="card-footer">
-        <span class="transcription-id">ID: {{ transcription.id.substring(0, 8) }}...</span>
-        <div class="card-actions">
-          <button
-            class="btn-icon btn-play"
-            (click)="isPlaying(transcription.id) ? stopAudio($event) : playAudio($event, transcription.id)"
-            [title]="isPlaying(transcription.id) ? 'Stop audio' : 'Play audio'"
+      <!-- Expandable Transcriptions Section -->
+      <div class="transcriptions-container" *ngIf="isExpanded(audioFileGroup.audio_file.id)">
+        <div class="transcriptions-grid">
+          <div
+            *ngFor="let transcription of audioFileGroup.transcriptions"
+            class="transcription-item"
+            (click)="viewTranscription(transcription.id)"
           >
-            {{ isPlaying(transcription.id) ? '⏹️ Stop' : '▶️ Play' }}
-          </button>
-          <button
-            class="btn-icon btn-delete"
-            (click)="deleteTranscription($event, transcription.id)"
-            title="Delete transcription"
-          >
-            🗑️ Delete
-          </button>
-          <span class="view-link">View Details →</span>
+            <!-- Model Badge -->
+            <div class="transcription-item-header">
+              <span class="model-badge">🤖 {{ transcription.model || 'unknown' }}</span>
+              <span class="status-badge" [ngClass]="transcriptionService.getStatusClass(transcription.status)">
+                {{ transcription.status }}
+              </span>
+            </div>
+
+            <!-- Text Preview -->
+            <div class="transcription-text-preview">
+              {{ getTruncatedText(transcription.text, 80) }}
+            </div>
+
+            <!-- Metadata -->
+            <div class="transcription-item-metadata">
+              <span class="meta-item" *ngIf="transcription.language">
+                🌐 {{ transcription.language }}
+              </span>
+              <span class="meta-item">
+                📅 {{ formatDate(transcription.created_at) }}
+              </span>
+            </div>
+
+            <!-- Actions -->
+            <div class="transcription-item-actions">
+              <button
+                class="btn-icon btn-play-small"
+                (click)="isPlaying(transcription.id) ? stopAudio($event) : playAudio($event, transcription.id)"
+                [title]="isPlaying(transcription.id) ? 'Stop audio' : 'Play audio'"
+              >
+                {{ isPlaying(transcription.id) ? '⏹️' : '▶️' }}
+              </button>
+              <button
+                class="btn-icon btn-delete-small"
+                (click)="deleteTranscription($event, transcription.id)"
+                title="Delete transcription"
+              >
+                🗑️
+              </button>
+              <span class="view-link-small">View →</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- Results Info -->
-  <div class="results-info" *ngIf="transcriptions.length > 0">
-    Showing {{ transcriptions.length }} transcription(s)
+  <div class="results-info" *ngIf="audioFilesWithTranscriptions.length > 0">
+    Showing {{ audioFilesWithTranscriptions.length }} audio file(s)
   </div>
 </div>

@@ -15,6 +15,7 @@ import { HistoryComponent } from './features/history/history.component';
 
 // Shared Components
 import { PopupComponent } from './shared/components/popup/popup.component';
+import { FooterComponent } from './shared/components/footer/footer.component';
 
 // Core Services
 import { ApiService } from './core/services/api.service';
@@ -29,7 +30,8 @@ import { PopupService } from './shared/services/popup.service';
     UploadComponent,
     TranscriptionComponent,
     HistoryComponent,
-    PopupComponent
+    PopupComponent,
+    FooterComponent
   ],
   imports: [
     BrowserModule,

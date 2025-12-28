@@ -61,6 +61,31 @@ export class ApiService {
   }
 
   /**
+   * Re-transcribe an existing audio file with a different model
+   */
+  retranscribeAudio(audioFileId: string, model: string, language?: string): Observable<Transcription> {
+    let params = new HttpParams().set('model', model);
+    if (language) {
+      params = params.set('language', language);
+    }
+
+    return this.http.post<Transcription>(
+      `${this.apiUrl}/audio-files/${audioFileId}/transcriptions`,
+      null,
+      { params }
+    );
+  }
+
+  /**
+   * Get all transcriptions for a specific audio file
+   */
+  getAudioFileTranscriptions(audioFileId: string): Observable<Transcription[]> {
+    return this.http.get<Transcription[]>(
+      `${this.apiUrl}/audio-files/${audioFileId}/transcriptions`
+    );
+  }
+
+  /**
    * Check API health
    */
   healthCheck(): Observable<{ status: string; message: string }> {

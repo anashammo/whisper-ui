@@ -197,4 +197,51 @@ export class TranscriptionService {
   getAudioUrl(id: string): string {
     return this.apiService.getAudioUrl(id);
   }
+
+  /**
+   * Load all transcriptions for a specific audio file
+   */
+  loadAudioFileTranscriptions(audioFileId: string): Observable<Transcription[]> {
+    this.isLoading$.next(true);
+    this.error$.next(null);
+
+    return this.apiService.getAudioFileTranscriptions(audioFileId).pipe(
+      tap({
+        next: () => {
+          this.isLoading$.next(false);
+        },
+        error: (error) => {
+          this.error$.next(error.error?.detail || 'Failed to load transcriptions');
+          this.isLoading$.next(false);
+        }
+      })
+    );
+  }
+
+  /**
+   * Re-transcribe an existing audio file with a different model
+   */
+  retranscribeAudio(audioFileId: string, model: string, language?: string): Observable<Transcription> {
+    this.isLoading$.next(true);
+    this.error$.next(null);
+
+    return this.apiService.retranscribeAudio(audioFileId, model, language).pipe(
+      tap({
+        next: (transcription) => {
+          this.currentTranscription$.next(transcription);
+          this.isLoading$.next(false);
+
+          // If transcription is processing, poll for updates
+          if (transcription.status === TranscriptionStatus.PROCESSING ||
+              transcription.status === TranscriptionStatus.PENDING) {
+            this.pollTranscriptionStatus(transcription.id);
+          }
+        },
+        error: (error) => {
+          this.error$.next(error.error?.detail || 'Re-transcription failed');
+          this.isLoading$.next(false);
+        }
+      })
+    );
+  }
 }

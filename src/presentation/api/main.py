@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from src.presentation.api.routers import transcription_router, health_router, model_router
+from src.presentation.api.routers import transcription_router, health_router, model_router, audio_file_router
 from src.infrastructure.config.settings import get_settings
 from src.infrastructure.persistence.database import init_db
 
@@ -74,6 +74,12 @@ app.include_router(
     model_router.router,
     prefix=settings.api_prefix,
     tags=["models"]
+)
+
+app.include_router(
+    audio_file_router.router,
+    prefix=settings.api_prefix,
+    tags=["audio-files"]
 )
 
 

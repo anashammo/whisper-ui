@@ -13,6 +13,8 @@ from ...application.use_cases.transcribe_audio_use_case import TranscribeAudioUs
 from ...application.use_cases.get_transcription_use_case import GetTranscriptionUseCase
 from ...application.use_cases.get_transcription_history_use_case import GetTranscriptionHistoryUseCase
 from ...application.use_cases.delete_transcription_use_case import DeleteTranscriptionUseCase
+from ...application.use_cases.retranscribe_audio_use_case import RetranscribeAudioUseCase
+from ...application.use_cases.get_audio_file_transcriptions_use_case import GetAudioFileTranscriptionsUseCase
 
 
 # Singleton services (loaded once and reused)
@@ -128,4 +130,49 @@ def get_delete_transcription_use_case(
         transcription_repository=transcription_repo,
         audio_file_repository=audio_file_repo,
         file_storage=file_storage
+    )
+
+
+def get_retranscribe_audio_use_case(
+    db: Session = Depends(get_db),
+    whisper_service: WhisperService = Depends(get_whisper_service)
+) -> RetranscribeAudioUseCase:
+    """
+    Create RetranscribeAudioUseCase with dependencies injected.
+
+    Args:
+        db: Database session
+        whisper_service: Whisper service for transcription
+
+    Returns:
+        RetranscribeAudioUseCase instance
+    """
+    transcription_repo = SQLiteTranscriptionRepository(db)
+    audio_file_repo = SQLiteAudioFileRepository(db)
+
+    return RetranscribeAudioUseCase(
+        transcription_repository=transcription_repo,
+        audio_file_repository=audio_file_repo,
+        speech_recognition_service=whisper_service
+    )
+
+
+def get_audio_file_transcriptions_use_case(
+    db: Session = Depends(get_db)
+) -> GetAudioFileTranscriptionsUseCase:
+    """
+    Create GetAudioFileTranscriptionsUseCase with dependencies injected.
+
+    Args:
+        db: Database session
+
+    Returns:
+        GetAudioFileTranscriptionsUseCase instance
+    """
+    transcription_repo = SQLiteTranscriptionRepository(db)
+    audio_file_repo = SQLiteAudioFileRepository(db)
+
+    return GetAudioFileTranscriptionsUseCase(
+        transcription_repository=transcription_repo,
+        audio_file_repository=audio_file_repo
     )

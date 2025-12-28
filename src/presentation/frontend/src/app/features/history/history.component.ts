@@ -4,10 +4,11 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TranscriptionService } from '../../core/services/transcription.service';
 import { Transcription } from '../../core/models/transcription.model';
+import { AudioFileWithTranscriptions } from '../../core/models/audio-file.model';
 import { PopupService } from '../../shared/services/popup.service';
 
 /**
- * History list component
+ * History list component with grouped audio file view
  */
 @Component({
   selector: 'app-history',
@@ -15,10 +16,13 @@ import { PopupService } from '../../shared/services/popup.service';
   styleUrls: ['./history.component.css']
 })
 export class HistoryComponent implements OnInit, OnDestroy {
-  transcriptions: Transcription[] = [];
+  audioFilesWithTranscriptions: AudioFileWithTranscriptions[] = [];
   isLoading: boolean = false;
   error: string | null = null;
   private destroy$ = new Subject<void>();
+
+  // Audio file expansion state
+  expandedAudioFileIds: Set<string> = new Set<string>();
 
   // Audio playback tracking
   currentlyPlayingId: string | null = null;
@@ -34,12 +38,12 @@ export class HistoryComponent implements OnInit, OnDestroy {
     // Load transcription history
     this.loadHistory();
 
-    // Subscribe to transcriptions list
+    // Subscribe to transcriptions list and group by audio file
     this.transcriptionService
       .getTranscriptions()
       .pipe(takeUntil(this.destroy$))
       .subscribe((transcriptions) => {
-        this.transcriptions = transcriptions;
+        this.audioFilesWithTranscriptions = this.groupTranscriptionsByAudioFile(transcriptions);
       });
 
     // Subscribe to loading state
@@ -105,6 +109,76 @@ export class HistoryComponent implements OnInit, OnDestroy {
   getTruncatedText(text: string | null, maxLength: number = 100): string {
     if (!text) return 'No text available';
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  }
+
+  /**
+   * Group transcriptions by audio file
+   */
+  private groupTranscriptionsByAudioFile(transcriptions: Transcription[]): AudioFileWithTranscriptions[] {
+    const groupedMap = new Map<string, Transcription[]>();
+
+    // Group transcriptions by audio_file_id
+    transcriptions.forEach(trans => {
+      const audioFileId = trans.audio_file_id;
+      if (!groupedMap.has(audioFileId)) {
+        groupedMap.set(audioFileId, []);
+      }
+      groupedMap.get(audioFileId)!.push(trans);
+    });
+
+    // Convert map to array of AudioFileWithTranscriptions
+    const result: AudioFileWithTranscriptions[] = [];
+    groupedMap.forEach((transcriptionList, audioFileId) => {
+      // Sort transcriptions by created_at DESC (newest first)
+      transcriptionList.sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      // Use the first (most recent) transcription to get audio file metadata
+      const firstTrans = transcriptionList[0];
+
+      result.push({
+        audio_file: {
+          id: audioFileId,
+          original_filename: `Audio File ${audioFileId.substring(0, 8)}`, // Placeholder - will be replaced when backend provides filename
+          file_size_bytes: 0, // Placeholder
+          mime_type: '', // Placeholder
+          duration_seconds: firstTrans.duration_seconds,
+          uploaded_at: firstTrans.created_at
+        },
+        transcriptions: transcriptionList,
+        transcription_count: transcriptionList.length
+      });
+    });
+
+    // Sort audio files by most recent transcription (newest first)
+    result.sort((a, b) =>
+      new Date(b.audio_file.uploaded_at).getTime() - new Date(a.audio_file.uploaded_at).getTime()
+    );
+
+    return result;
+  }
+
+  /**
+   * Toggle expansion state for an audio file
+   */
+  toggleExpanded(audioFileId: string, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    if (this.expandedAudioFileIds.has(audioFileId)) {
+      this.expandedAudioFileIds.delete(audioFileId);
+    } else {
+      this.expandedAudioFileIds.add(audioFileId);
+    }
+  }
+
+  /**
+   * Check if an audio file is expanded
+   */
+  isExpanded(audioFileId: string): boolean {
+    return this.expandedAudioFileIds.has(audioFileId);
   }
 
   /**
