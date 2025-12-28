@@ -1,0 +1,42 @@
+"""Script to start the Angular frontend server"""
+import subprocess
+import sys
+import os
+
+def run_frontend():
+    """Start the Angular dev server"""
+    print("=" * 50)
+    print("Starting Angular Frontend Server...")
+    print("=" * 50)
+
+    # Change to frontend directory
+    frontend_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "src", "presentation", "frontend"
+    )
+
+    if not os.path.exists(frontend_dir):
+        print(f"Error: Frontend directory not found: {frontend_dir}")
+        return 1
+
+    print(f"\nFrontend directory: {frontend_dir}")
+    print("Running: npm start")
+    print("-" * 50)
+
+    try:
+        # Run npm start in the frontend directory
+        result = subprocess.run(
+            ["npm", "start"],
+            cwd=frontend_dir,
+            shell=True
+        )
+        return result.returncode
+    except KeyboardInterrupt:
+        print("\n\nFrontend server stopped by user")
+        return 0
+    except Exception as e:
+        print(f"\nError starting frontend: {e}")
+        return 1
+
+if __name__ == "__main__":
+    sys.exit(run_frontend())
