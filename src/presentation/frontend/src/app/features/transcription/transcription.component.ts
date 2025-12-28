@@ -30,6 +30,40 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   availableModels: string[] = ['tiny', 'base', 'small', 'medium', 'large'];
   isRetranscribing: boolean = false;
 
+  // Model information
+  modelInfo: { [key: string]: { name: string; description: string; params: string; speed: string } } = {
+    'tiny': {
+      name: 'Tiny',
+      description: 'Fastest model, suitable for quick transcriptions with acceptable accuracy',
+      params: '39M parameters',
+      speed: 'Very Fast'
+    },
+    'base': {
+      name: 'Base',
+      description: 'Good balance of speed and accuracy, recommended for most uses',
+      params: '74M parameters',
+      speed: 'Fast'
+    },
+    'small': {
+      name: 'Small',
+      description: 'Balanced speed and accuracy, better quality than base',
+      params: '244M parameters',
+      speed: 'Medium'
+    },
+    'medium': {
+      name: 'Medium',
+      description: 'Better accuracy than small, suitable for important transcriptions',
+      params: '769M parameters',
+      speed: 'Slow'
+    },
+    'large': {
+      name: 'Large',
+      description: 'Best accuracy available, recommended for critical transcriptions',
+      params: '1550M parameters',
+      speed: 'Very Slow'
+    }
+  };
+
   // Expose enum to template
   TranscriptionStatus = TranscriptionStatus;
 
@@ -324,6 +358,13 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
    */
   isModelAlreadyTranscribed(model: string): boolean {
     return this.allTranscriptions.some(t => t.model === model);
+  }
+
+  /**
+   * Get information for the currently selected model
+   */
+  getSelectedModelInfo(): { name: string; description: string; params: string; speed: string } | null {
+    return this.modelInfo[this.selectedModel] || null;
   }
 
   /**

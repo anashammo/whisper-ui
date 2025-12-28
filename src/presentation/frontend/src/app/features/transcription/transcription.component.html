@@ -155,15 +155,19 @@
           </select>
         </div>
 
-        <div class="model-info">
-          <h4>Model Information:</h4>
-          <ul>
-            <li><strong>tiny:</strong> Fastest, least accurate (39M params)</li>
-            <li><strong>base:</strong> Fast, good for most uses (74M params)</li>
-            <li><strong>small:</strong> Balanced speed and accuracy (244M params)</li>
-            <li><strong>medium:</strong> Better accuracy, slower (769M params)</li>
-            <li><strong>large:</strong> Best accuracy, slowest (1550M params)</li>
-          </ul>
+        <div class="model-info" *ngIf="getSelectedModelInfo() as info">
+          <h4>Selected Model: {{ info.name }}</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="info-label">Speed:</span>
+              <span class="info-value">{{ info.speed }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Parameters:</span>
+              <span class="info-value">{{ info.params }}</span>
+            </div>
+          </div>
+          <p class="info-description">{{ info.description }}</p>
         </div>
       </div>
 

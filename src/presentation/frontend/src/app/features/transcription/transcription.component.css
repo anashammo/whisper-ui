@@ -463,32 +463,48 @@
 }
 
 .model-info h4 {
-  color: #e2e8f0;
+  color: #4299e1;
   margin: 0 0 1rem 0;
   font-size: 1rem;
+  font-weight: 600;
 }
 
-.model-info ul {
-  list-style: none;
-  padding: 0;
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-label {
+  font-size: 0.75rem;
+  color: #a0aec0;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.info-value {
+  font-size: 0.875rem;
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.info-description {
   margin: 0;
-}
-
-.model-info li {
-  color: #cbd5e0;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid #2d3748;
+  padding: 1rem;
+  background-color: #2d3748;
+  border-radius: 4px;
   font-size: 0.875rem;
   line-height: 1.5;
-}
-
-.model-info li:last-child {
-  border-bottom: none;
-}
-
-.model-info strong {
-  color: #4299e1;
-  font-weight: 600;
+  color: #cbd5e0;
+  border-left: 3px solid #4299e1;
 }
 
 .modal-footer {
