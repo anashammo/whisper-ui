@@ -4,12 +4,24 @@ A professional voice-to-text transcription system using OpenAI Whisper, built wi
 
 ## Features
 
-- **GPU-Accelerated Transcription**: Uses CUDA for fast audio transcription
+### Core Features
+- **GPU-Accelerated Transcription**: Uses CUDA for fast audio transcription with NVIDIA RTX GPUs
 - **Clean Architecture**: Domain-driven design with clear separation of concerns
 - **REST API**: FastAPI with automatic OpenAPI documentation
 - **Multiple Audio Formats**: Supports MP3, WAV, M4A, FLAC, OGG, WEBM
 - **Transcription History**: SQLite database for storing transcriptions
 - **On-Premises Deployment**: All data stored locally, no cloud dependencies
+
+### Frontend Features
+- **Browser Audio Recording**: Record audio directly from your microphone (up to 30 seconds)
+- **File Upload**: Drag & drop audio file upload with preview
+- **Editable Transcriptions**: Edit transcription text directly in the UI
+- **Audio Playback**: Play original audio with play/stop controls
+- **Model Selection**: Choose from 5 Whisper models (tiny, base, small, medium, large)
+- **Real-time Download Progress**: Visual progress bar when downloading new models
+- **Model Name Display**: See which model was used for each transcription
+- **Delete Functionality**: Remove transcriptions and associated audio files
+- **Dark Mode UI**: Modern, clean interface with dark theme
 
 ## Architecture
 
@@ -137,6 +149,7 @@ Content-Type: multipart/form-data
 Parameters:
 - file: Audio file (required)
 - language: Language code (optional, e.g., 'en', 'es')
+- model: Whisper model (optional, default: 'base', options: tiny/base/small/medium/large)
 
 Response:
 {
@@ -145,6 +158,7 @@ Response:
   "text": "Transcribed text here...",
   "status": "completed",
   "language": "en",
+  "model": "base",
   "duration_seconds": 45.3,
   "created_at": "2025-12-28T10:30:00Z",
   "completed_at": "2025-12-28T10:30:15Z"
@@ -167,6 +181,56 @@ Response:
 #### Get Specific Transcription
 ```http
 GET /api/v1/transcriptions/{transcription_id}
+```
+
+#### Delete Transcription
+```http
+DELETE /api/v1/transcriptions/{transcription_id}
+
+Response: 204 No Content
+```
+
+#### Download Original Audio
+```http
+GET /api/v1/transcriptions/{transcription_id}/audio
+
+Response: Audio file (binary stream)
+```
+
+### Model Management Endpoints
+
+#### Check Model Status
+```http
+GET /api/v1/models/status/{model_name}
+
+Response:
+{
+  "model_name": "medium",
+  "is_cached": true,
+  "is_loaded": false
+}
+```
+
+#### Stream Model Download Progress (SSE)
+```http
+GET /api/v1/models/download-progress/{model_name}
+
+Response: Server-Sent Events stream
+data: {"status": "downloading", "progress": 45.2, "bytes_downloaded": 678000000, "total_bytes": 1500000000}
+```
+
+#### Get Available Models
+```http
+GET /api/v1/models/available
+
+Response:
+{
+  "models": [
+    {"code": "tiny", "name": "Tiny", "size": "~75MB", ...},
+    {"code": "base", "name": "Base", "size": "~150MB", ...},
+    ...
+  ]
+}
 ```
 
 ### Health Endpoints
