@@ -66,7 +66,8 @@ src/
 ### 1. Clone the Repository
 
 ```bash
-cd C:\Users\ahammo\Repos\Whisper
+git clone https://github.com/anashammo/whisper-ui.git
+cd whisper-ui
 ```
 
 ### 2. Create Virtual Environment
@@ -97,7 +98,23 @@ pip install -r requirements.txt
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
 
-### 5. Download Whisper Model
+### 5. Install FFmpeg
+
+**Windows:**
+1. Download FFmpeg from https://www.gyan.dev/ffmpeg/builds/
+2. Extract to project directory (e.g., `ffmpeg-8.0.1-essentials_build/`)
+3. The backend will automatically add FFmpeg to PATH on startup
+
+**Linux/Mac:**
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install ffmpeg
+
+# macOS
+brew install ffmpeg
+```
+
+### 6. Download Whisper Model
 
 ```bash
 python scripts/download_whisper_model.py base
@@ -105,7 +122,15 @@ python scripts/download_whisper_model.py base
 
 Available models: `tiny`, `base`, `small`, `medium`, `large`
 
-### 6. Setup Environment Variables
+### 7. Install Frontend Dependencies
+
+```bash
+cd src/presentation/frontend
+npm install
+cd ../../..
+```
+
+### 8. Setup Environment Variables (Optional)
 
 ```bash
 cp .env.example .env
@@ -117,7 +142,7 @@ Edit `.env` to configure:
 - `MAX_FILE_SIZE_MB`: Maximum upload size (default: 25)
 - `CORS_ORIGINS`: Allowed origins for CORS
 
-### 7. Initialize Database
+### 9. Initialize Database
 
 ```bash
 python scripts/init_db.py
@@ -142,13 +167,11 @@ python scripts/run_frontend.py
 **Option 2: Manual start**
 
 ```bash
-# Backend
-cd C:\Users\ahammo\Repos\Whisper
-./venv/Scripts/python.exe -m uvicorn src.presentation.api.main:app --host 0.0.0.0 --port 8001 --reload
+# Backend (from project root)
+python -m uvicorn src.presentation.api.main:app --host 0.0.0.0 --port 8001 --reload
 
-# Frontend
+# Frontend (from project root)
 cd src/presentation/frontend
-npm install
 ng serve
 ```
 
@@ -298,10 +321,11 @@ Response:
 ### Using cURL
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/transcriptions" \
+curl -X POST "http://localhost:8001/api/v1/transcriptions" \
   -H "Content-Type: multipart/form-data" \
   -F "file=@audio.mp3" \
-  -F "language=en"
+  -F "language=en" \
+  -F "model=base"
 ```
 
 ### Using Python
@@ -309,9 +333,9 @@ curl -X POST "http://localhost:8000/api/v1/transcriptions" \
 ```python
 import requests
 
-url = "http://localhost:8000/api/v1/transcriptions"
+url = "http://localhost:8001/api/v1/transcriptions"
 files = {"file": open("audio.mp3", "rb")}
-data = {"language": "en"}
+data = {"language": "en", "model": "base"}
 
 response = requests.post(url, files=files, data=data)
 print(response.json())
@@ -380,8 +404,47 @@ Whisper/
 | `DATABASE_URL` | sqlite:///./whisper_transcriptions.db | Database connection |
 | `UPLOAD_DIR` | ./uploads | Upload directory |
 | `MAX_FILE_SIZE_MB` | 25 | Max upload size |
-| `API_PORT` | 8000 | API port |
+| `MAX_DURATION_SECONDS` | 30 | Max audio duration |
+| `API_PORT` | 8001 | API port |
 | `CORS_ORIGINS` | ["http://localhost:4200"] | Allowed origins |
+
+## Utility Scripts
+
+The `scripts/` directory contains helpful utilities:
+
+### Server Management
+
+| Script | Description |
+|--------|-------------|
+| `run_backend.py` | Start the FastAPI backend server on port 8001 |
+| `run_frontend.py` | Start the Angular dev server on port 4200 |
+| `stop_backend.py` | Stop the backend server |
+| `stop_frontend.py` | Stop the frontend server |
+| `stop_all.py` | Stop both backend and frontend servers |
+
+### Database & Models
+
+| Script | Description |
+|--------|-------------|
+| `init_db.py` | Initialize the SQLite database and create tables |
+| `download_whisper_model.py` | Download a specific Whisper model (tiny/base/small/medium/large) |
+
+### Usage Examples
+
+```bash
+# Download a specific model
+python scripts/download_whisper_model.py medium
+
+# Initialize database
+python scripts/init_db.py
+
+# Start servers
+python scripts/run_backend.py  # Terminal 1
+python scripts/run_frontend.py # Terminal 2
+
+# Stop servers
+python scripts/stop_all.py
+```
 
 ## Development
 
