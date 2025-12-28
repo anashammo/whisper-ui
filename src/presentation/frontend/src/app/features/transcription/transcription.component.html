@@ -1,0 +1,100 @@
+<div class="transcription-container">
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading && !transcription">
+    <div class="spinner"></div>
+    <h3>Loading transcription...</h3>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-message" *ngIf="error">
+    <span>⚠️ {{ error }}</span>
+    <button class="btn btn-primary" (click)="goToUpload()">Go Back</button>
+  </div>
+
+  <!-- Transcription Detail -->
+  <div class="transcription-detail" *ngIf="transcription && !isLoading">
+    <!-- Header -->
+    <div class="header">
+      <h1>Transcription Details</h1>
+      <div class="header-actions">
+        <button class="btn btn-secondary" (click)="goToUpload()">New Transcription</button>
+        <button class="btn btn-secondary" (click)="goToHistory()">View History</button>
+      </div>
+    </div>
+
+    <!-- Status Card -->
+    <div class="status-card">
+      <div class="status-header">
+        <span class="status-badge" [ngClass]="transcriptionService.getStatusClass(transcription.status)">
+          {{ transcription.status }}
+        </span>
+        <span class="timestamp">{{ formatDate(transcription.created_at) }}</span>
+      </div>
+
+      <div class="metadata">
+        <div class="metadata-item">
+          <span class="label">ID:</span>
+          <span class="value">{{ transcription.id }}</span>
+        </div>
+        <div class="metadata-item" *ngIf="transcription.language">
+          <span class="label">Language:</span>
+          <span class="value">{{ transcription.language }}</span>
+        </div>
+        <div class="metadata-item">
+          <span class="label">Duration:</span>
+          <span class="value">{{ transcriptionService.formatDuration(transcription.duration_seconds) }}</span>
+        </div>
+        <div class="metadata-item" *ngIf="transcription.completed_at">
+          <span class="label">Completed:</span>
+          <span class="value">{{ formatDate(transcription.completed_at) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Processing State -->
+    <div class="processing-state" *ngIf="transcription.status === TranscriptionStatus.PROCESSING || transcription.status === TranscriptionStatus.PENDING">
+      <div class="spinner"></div>
+      <h3>Transcription in progress...</h3>
+      <p>Please wait while we process your audio. This page will update automatically.</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" *ngIf="transcription.status === TranscriptionStatus.FAILED">
+      <h3>❌ Transcription Failed</h3>
+      <p class="error-text">{{ transcription.error_message }}</p>
+    </div>
+
+    <!-- Completed State -->
+    <div class="completed-state" *ngIf="transcription.status === TranscriptionStatus.COMPLETED && transcription.text">
+      <div class="text-header">
+        <h3>Transcription Result</h3>
+        <div class="text-actions">
+          <button
+            class="btn btn-icon"
+            (click)="isPlayingAudio ? stopAudio() : playAudio()"
+            [title]="isPlayingAudio ? 'Stop audio' : 'Play original audio'"
+          >
+            {{ isPlayingAudio ? '⏹️' : '▶️' }} {{ isPlayingAudio ? 'Stop' : 'Play' }} Audio
+          </button>
+          <button class="btn btn-icon" (click)="copyToClipboard()" title="Copy to clipboard">
+            📋 Copy
+          </button>
+          <button class="btn btn-icon" (click)="downloadText()" title="Download as text file">
+            💾 Download
+          </button>
+        </div>
+      </div>
+
+      <textarea
+        class="transcription-text-editable"
+        [(ngModel)]="transcription.text"
+        placeholder="Transcribed text will appear here..."
+        rows="15"
+      ></textarea>
+
+      <div class="word-count">
+        Word count: {{ transcription.text ? transcription.text.split(' ').length : 0 }} | Characters: {{ transcription.text ? transcription.text.length : 0 }}
+      </div>
+    </div>
+  </div>
+</div>

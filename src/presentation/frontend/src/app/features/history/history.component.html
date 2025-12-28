@@ -1,0 +1,84 @@
+<div class="history-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>Transcription History</h1>
+    <button class="btn btn-primary" (click)="goToUpload()">New Transcription</button>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-state" *ngIf="isLoading && transcriptions.length === 0">
+    <div class="spinner"></div>
+    <h3>Loading history...</h3>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-message" *ngIf="error">
+    <span>⚠️ {{ error }}</span>
+    <button class="btn btn-primary" (click)="loadHistory()">Retry</button>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!isLoading && transcriptions.length === 0 && !error">
+    <div class="empty-icon">📝</div>
+    <h3>No transcriptions yet</h3>
+    <p>Upload an audio file to get started!</p>
+    <button class="btn btn-primary" (click)="goToUpload()">Upload Audio</button>
+  </div>
+
+  <!-- Transcription List -->
+  <div class="transcription-list" *ngIf="transcriptions.length > 0">
+    <div
+      *ngFor="let transcription of transcriptions"
+      class="transcription-card"
+      (click)="viewTranscription(transcription.id)"
+    >
+      <div class="card-header">
+        <span class="status-badge" [ngClass]="transcriptionService.getStatusClass(transcription.status)">
+          {{ transcription.status }}
+        </span>
+        <span class="timestamp">{{ formatDate(transcription.created_at) }}</span>
+      </div>
+
+      <div class="card-content">
+        <div class="transcription-preview">
+          {{ getTruncatedText(transcription.text) }}
+        </div>
+
+        <div class="card-metadata">
+          <span class="metadata-item" *ngIf="transcription.language">
+            🌐 {{ transcription.language }}
+          </span>
+          <span class="metadata-item">
+            ⏱️ {{ transcriptionService.formatDuration(transcription.duration_seconds) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span class="transcription-id">ID: {{ transcription.id.substring(0, 8) }}...</span>
+        <div class="card-actions">
+          <button
+            class="btn-icon btn-play"
+            (click)="isPlaying(transcription.id) ? stopAudio($event) : playAudio($event, transcription.id)"
+            [title]="isPlaying(transcription.id) ? 'Stop audio' : 'Play audio'"
+          >
+            {{ isPlaying(transcription.id) ? '⏹️ Stop' : '▶️ Play' }}
+          </button>
+          <button
+            class="btn-icon btn-delete"
+            (click)="deleteTranscription($event, transcription.id)"
+            title="Delete transcription"
+          >
+            🗑️ Delete
+          </button>
+          <span class="view-link">View Details →</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Info -->
+  <div class="results-info" *ngIf="transcriptions.length > 0">
+    Showing {{ transcriptions.length }} transcription(s)
+  </div>
+</div>

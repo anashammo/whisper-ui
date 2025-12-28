@@ -1,0 +1,215 @@
+<div class="upload-container">
+  <div class="upload-header">
+    <h1>Whisper Transcription</h1>
+    <p>Upload an audio file or record directly from your microphone</p>
+  </div>
+
+  <!-- Tab selector -->
+  <div class="tab-selector" *ngIf="!selectedFile && !isRecording && !recordedAudioUrl && !isUploading">
+    <button
+      class="tab-button"
+      [class.active]="mode === 'upload'"
+      (click)="switchToUploadMode()"
+    >
+      📁 Upload File
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="mode === 'record'"
+      (click)="switchToRecordMode()"
+    >
+      🎤 Record Audio
+    </button>
+  </div>
+
+  <!-- Start Recording Button (show when in record mode but not recording) -->
+  <div class="start-recording-section" *ngIf="mode === 'record' && !isRecording && !recordedAudioUrl && !isUploading">
+    <div class="record-prompt">
+      <div class="microphone-icon">🎤</div>
+      <h3>Ready to Record</h3>
+      <p>Click the button below to start recording audio from your microphone</p>
+      <p class="recording-info">Maximum duration: 30 seconds</p>
+      <button class="btn btn-danger btn-large" (click)="startRecording()">
+        ⏺️ Start Recording
+      </button>
+    </div>
+  </div>
+
+  <!-- Error message -->
+  <div class="error-message" *ngIf="error">
+    <span>⚠️ {{ error }}</span>
+  </div>
+
+  <!-- Drag & Drop Area -->
+  <div
+    class="drop-zone"
+    [class.dragging]="isDragging"
+    [class.has-file]="selectedFile"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+    *ngIf="mode === 'upload' && !selectedFile && !isRecording && !recordedAudioUrl"
+  >
+    <div class="drop-zone-content">
+      <div class="upload-icon">📁</div>
+      <h3>Drag & drop your audio file here</h3>
+      <p>or</p>
+      <label class="file-input-label">
+        <input
+          type="file"
+          accept="audio/*"
+          (change)="onFileSelected($event)"
+          class="file-input"
+        />
+        <span class="btn btn-primary">Choose File</span>
+      </label>
+      <p class="file-info">Supported formats: MP3, WAV, M4A, FLAC, OGG, WEBM (Max 25MB, 30 seconds)</p>
+    </div>
+  </div>
+
+  <!-- Recording Interface -->
+  <div class="recording-container" *ngIf="isRecording">
+    <div class="recording-active">
+      <div class="recording-indicator">
+        <span class="recording-pulse"></span>
+        <span class="recording-text">Recording...</span>
+      </div>
+      <div class="recording-timer">
+        <h2>{{ formatDuration(recordingDuration) }}</h2>
+        <p>Maximum: 0:30</p>
+      </div>
+      <div class="recording-actions">
+        <button class="btn btn-danger" (click)="stopRecording()">
+          ⏹️ Stop Recording
+        </button>
+        <button class="btn btn-secondary" (click)="cancelRecording()">
+          ✕ Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recorded Audio Preview -->
+  <div class="recorded-audio-preview" *ngIf="recordedAudioUrl && !isUploading">
+    <div class="audio-preview-card">
+      <div class="audio-icon">🎵</div>
+      <div class="audio-details">
+        <h3>Recorded Audio</h3>
+        <p>Duration: {{ formatDuration(recordingDuration) }}</p>
+        <p>Format: WebM</p>
+      </div>
+      <div class="audio-actions">
+        <button
+          class="btn btn-icon"
+          (click)="isPlayingRecording ? stopRecordingPlayback() : playRecording()"
+          [title]="isPlayingRecording ? 'Stop' : 'Play'"
+        >
+          {{ isPlayingRecording ? '⏹️' : '▶️' }}
+        </button>
+        <button class="btn btn-icon" (click)="cancelRecording()" title="Delete">
+          🗑️
+        </button>
+      </div>
+    </div>
+
+    <!-- Language Selection for recorded audio -->
+    <div class="language-selection">
+      <label for="language-recorded">Language (optional):</label>
+      <select id="language-recorded" [(ngModel)]="selectedLanguage" class="language-select">
+        <option *ngFor="let lang of languages" [value]="lang.code">
+          {{ lang.name }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Model Selection for recorded audio -->
+    <div class="language-selection">
+      <label for="model-recorded">Model:</label>
+      <select id="model-recorded" [(ngModel)]="selectedModel" (change)="onModelChange()" class="language-select">
+        <option *ngFor="let model of models" [value]="model.code">
+          {{ model.name }} - {{ model.size }}
+        </option>
+      </select>
+      <span class="model-status" *ngIf="downloadStatus === 'cached'">✓ Cached</span>
+      <span class="model-status needs-download" *ngIf="downloadStatus === 'needs_download'">⬇️ Will download</span>
+    </div>
+
+    <!-- Upload Button -->
+    <button class="btn btn-success btn-upload" (click)="uploadFile()">
+      Start Transcription
+    </button>
+  </div>
+
+  <!-- Selected File Info -->
+  <div class="file-selected" *ngIf="selectedFile && !recordedAudioUrl && !isUploading">
+    <div class="file-info-card">
+      <div class="file-icon">🎵</div>
+      <div class="file-details">
+        <h3>{{ selectedFile.name }}</h3>
+        <p>Size: {{ formatFileSize(selectedFile.size) }}</p>
+        <p>Type: {{ selectedFile.type }}</p>
+      </div>
+      <div class="audio-actions">
+        <button
+          class="btn btn-icon"
+          (click)="isPlayingFile ? stopFile() : playFile()"
+          [title]="isPlayingFile ? 'Stop' : 'Play audio'"
+        >
+          {{ isPlayingFile ? '⏹️' : '▶️' }}
+        </button>
+        <button class="btn-remove" (click)="clearFile()">✕</button>
+      </div>
+    </div>
+
+    <!-- Language Selection -->
+    <div class="language-selection">
+      <label for="language">Language (optional):</label>
+      <select id="language" [(ngModel)]="selectedLanguage" class="language-select">
+        <option *ngFor="let lang of languages" [value]="lang.code">
+          {{ lang.name }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Model Selection -->
+    <div class="language-selection">
+      <label for="model">Model:</label>
+      <select id="model" [(ngModel)]="selectedModel" (change)="onModelChange()" class="language-select">
+        <option *ngFor="let model of models" [value]="model.code">
+          {{ model.name }} - {{ model.size }}
+        </option>
+      </select>
+      <span class="model-status" *ngIf="downloadStatus === 'cached'">✓ Cached</span>
+      <span class="model-status needs-download" *ngIf="downloadStatus === 'needs_download'">⬇️ Will download</span>
+    </div>
+
+    <!-- Upload Button -->
+    <button class="btn btn-success btn-upload" (click)="uploadFile()">
+      Start Transcription
+    </button>
+  </div>
+
+  <!-- Model Download Progress -->
+  <div class="download-progress-state" *ngIf="isDownloadingModel">
+    <h3>Downloading model...</h3>
+    <p>Downloading "{{ selectedModel }}" model. This may take a few moments.</p>
+    <div class="progress-bar-container">
+      <div class="progress-bar" [style.width.%]="downloadProgress">
+        <span class="progress-text">{{ downloadProgress.toFixed(0) }}%</span>
+      </div>
+    </div>
+    <p class="progress-status">Status: {{ downloadStatus }}</p>
+  </div>
+
+  <!-- Uploading State -->
+  <div class="uploading-state" *ngIf="isUploading && !isDownloadingModel">
+    <div class="spinner"></div>
+    <h3>Uploading and transcribing...</h3>
+    <p>Please wait while we process your audio file.</p>
+  </div>
+
+  <!-- Navigation Links -->
+  <div class="navigation-links">
+    <a routerLink="/history" class="link">View History</a>
+  </div>
+</div>
