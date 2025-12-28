@@ -143,7 +143,8 @@ python scripts/run_frontend.py
 
 ```bash
 # Backend
-python scripts/run_dev.py
+cd C:\Users\ahammo\Repos\Whisper
+./venv/Scripts/python.exe -m uvicorn src.presentation.api.main:app --host 0.0.0.0 --port 8001 --reload
 
 # Frontend
 cd src/presentation/frontend
@@ -349,7 +350,6 @@ Whisper/
 ├── scripts/                       # Utility scripts
 │   ├── run_backend.py            # Start backend server
 │   ├── run_frontend.py           # Start frontend server
-│   ├── run_dev.py                # Legacy backend start script
 │   ├── stop_backend.py           # Stop backend server
 │   ├── stop_frontend.py          # Stop frontend server
 │   ├── stop_all.py               # Stop all servers
