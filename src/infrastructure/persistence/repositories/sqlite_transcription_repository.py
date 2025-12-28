@@ -44,7 +44,8 @@ class SQLiteTranscriptionRepository(TranscriptionRepository):
             duration_seconds=model.duration_seconds,
             created_at=model.created_at,
             completed_at=model.completed_at,
-            error_message=model.error_message
+            error_message=model.error_message,
+            model=model.model
         )
 
     def _to_model(self, entity: Transcription) -> TranscriptionModel:
@@ -66,7 +67,8 @@ class SQLiteTranscriptionRepository(TranscriptionRepository):
             duration_seconds=entity.duration_seconds,
             created_at=entity.created_at,
             completed_at=entity.completed_at,
-            error_message=entity.error_message
+            error_message=entity.error_message,
+            model=entity.model
         )
 
     async def create(self, transcription: Transcription) -> Transcription:

@@ -21,6 +21,7 @@ class TranscriptionDTO:
     created_at: datetime
     completed_at: Optional[datetime]
     error_message: Optional[str] = None
+    model: Optional[str] = None
 
     @classmethod
     def from_entity(cls, transcription):
@@ -44,5 +45,6 @@ class TranscriptionDTO:
             duration_seconds=transcription.duration_seconds,
             created_at=transcription.created_at,
             completed_at=transcription.completed_at,
-            error_message=transcription.error_message
+            error_message=transcription.error_message,
+            model=transcription.model
         )

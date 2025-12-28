@@ -15,6 +15,7 @@ class TranscriptionResponse(BaseModel):
     created_at: datetime
     completed_at: Optional[datetime] = None
     error_message: Optional[str] = None
+    model: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -25,6 +26,7 @@ class TranscriptionResponse(BaseModel):
                 "text": "This is the transcribed text from the audio file.",
                 "status": "completed",
                 "language": "en",
+                "model": "base",
                 "duration_seconds": 45.3,
                 "created_at": "2025-12-28T10:30:00Z",
                 "completed_at": "2025-12-28T10:30:15Z",
@@ -52,7 +54,8 @@ class TranscriptionResponse(BaseModel):
             duration_seconds=dto.duration_seconds,
             created_at=dto.created_at,
             completed_at=dto.completed_at,
-            error_message=dto.error_message
+            error_message=dto.error_message,
+            model=dto.model
         )
 
 
