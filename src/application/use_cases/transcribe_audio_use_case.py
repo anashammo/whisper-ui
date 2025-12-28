@@ -124,7 +124,7 @@ class TranscribeAudioUseCase:
             text=None,
             status=TranscriptionStatus.PENDING,
             language=upload_dto.language,
-            duration_seconds=0.0,
+            duration_seconds=saved_audio_file.duration_seconds or 0.0,
             created_at=datetime.utcnow(),
             completed_at=None,
             error_message=None
