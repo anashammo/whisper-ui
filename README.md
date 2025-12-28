@@ -2,6 +2,17 @@
 
 A professional voice-to-text transcription system using OpenAI Whisper, built with clean architecture principles. Features GPU-accelerated transcription, FastAPI backend, and Angular frontend.
 
+## Recent Updates
+
+**Latest Features (December 2025):**
+- ✨ **Real-time Model Download Progress**: Visual progress bar showing actual download percentage (0-100%) when downloading new Whisper models
+- 🤖 **Model Name Display**: See which Whisper model was used for each transcription in history and details views
+- 📝 **Editable Transcriptions**: Edit transcription text directly in the UI
+- 🎙️ **Browser Audio Recording**: Record audio directly from your microphone (up to 30 seconds)
+- ▶️ **Audio Playback Controls**: Play/stop original audio with intuitive controls
+- 🗑️ **Delete Functionality**: Remove transcriptions and associated audio files
+- 🎛️ **Server Management Scripts**: Convenient Python scripts to start/stop backend and frontend servers
+
 ## Features
 
 ### Core Features
@@ -114,28 +125,50 @@ python scripts/init_db.py
 
 ## Running the Application
 
-### Start Backend API
+### Start Servers
+
+**Option 1: Using convenience scripts (Recommended)**
+
+Open two separate terminals:
 
 ```bash
-python scripts/run_dev.py
+# Terminal 1 - Start Backend (port 8001)
+python scripts/run_backend.py
+
+# Terminal 2 - Start Frontend (port 4200)
+python scripts/run_frontend.py
 ```
 
-The API will be available at:
-- **API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/api/v1/health
-
-### Start Angular Frontend
-
-The Angular frontend is part of the presentation layer and consumes the API.
+**Option 2: Manual start**
 
 ```bash
+# Backend
+python scripts/run_dev.py
+
+# Frontend
 cd src/presentation/frontend
 npm install
 ng serve
 ```
 
-Frontend will be available at: http://localhost:4200
+The servers will be available at:
+- **Backend API**: http://localhost:8001
+- **API Docs**: http://localhost:8001/docs
+- **Health Check**: http://localhost:8001/api/v1/health
+- **Frontend**: http://localhost:4200
+
+### Stop Servers
+
+```bash
+# Stop backend only
+python scripts/stop_backend.py
+
+# Stop frontend only
+python scripts/stop_frontend.py
+
+# Stop both servers at once
+python scripts/stop_all.py
+```
 
 ## API Endpoints
 
@@ -314,6 +347,14 @@ Whisper/
 │           ├── package.json      # NPM dependencies
 │           └── angular.json      # Angular configuration
 ├── scripts/                       # Utility scripts
+│   ├── run_backend.py            # Start backend server
+│   ├── run_frontend.py           # Start frontend server
+│   ├── run_dev.py                # Legacy backend start script
+│   ├── stop_backend.py           # Stop backend server
+│   ├── stop_frontend.py          # Stop frontend server
+│   ├── stop_all.py               # Stop all servers
+│   ├── init_db.py                # Initialize database
+│   └── download_whisper_model.py # Download Whisper models
 ├── tests/                         # Tests
 ├── requirements.txt               # Python dependencies
 ├── .env.example                   # Environment template
