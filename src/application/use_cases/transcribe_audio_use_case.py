@@ -127,7 +127,8 @@ class TranscribeAudioUseCase:
             duration_seconds=saved_audio_file.duration_seconds or 0.0,
             created_at=datetime.utcnow(),
             completed_at=None,
-            error_message=None
+            error_message=None,
+            model=upload_dto.model or "base"
         )
 
         # Step 6: Persist transcription (PENDING status)

@@ -5,11 +5,13 @@ from typing import Dict, List, Optional
 import asyncio
 from functools import partial
 import os
+import sys
 
 from ...domain.services.speech_recognition_service import SpeechRecognitionService
 from ...domain.exceptions.domain_exception import ServiceException
 from ..config.settings import Settings
 from .model_download_tracker import download_tracker
+from .tqdm_progress_hook import TqdmProgressHook
 
 
 def get_audio_duration(audio_file_path: str) -> float:
@@ -154,6 +156,17 @@ class WhisperService(SpeechRecognitionService):
             estimated_size = model_sizes.get(model_name, 150 * 1024 * 1024)
             await download_tracker.start_download(model_name, estimated_size)
 
+            # Monkey-patch tqdm in the whisper module to capture download progress
+            original_tqdm = whisper.tqdm
+
+            def create_hooked_tqdm(*args, **kwargs):
+                """Create a tqdm instance with our progress hook"""
+                instance = TqdmProgressHook(*args, **kwargs)
+                instance.set_tracking(model_name, download_tracker)
+                return instance
+
+            whisper.tqdm = create_hooked_tqdm
+
         try:
             # Load model in thread pool (blocking operation)
             loop = asyncio.get_event_loop()
@@ -166,12 +179,18 @@ class WhisperService(SpeechRecognitionService):
             print(f"Whisper model '{model_name}' loaded successfully on {self.device}")
 
             if not is_cached:
+                # Restore original tqdm
+                if hasattr(whisper, 'tqdm'):
+                    whisper.tqdm = original_tqdm
                 await download_tracker.complete_download(model_name)
 
             return model
 
         except Exception as e:
             if not is_cached:
+                # Restore original tqdm on error
+                if 'original_tqdm' in locals():
+                    whisper.tqdm = original_tqdm
                 await download_tracker.set_error(model_name, str(e))
             raise ServiceException(f"Failed to load Whisper model '{model_name}': {str(e)}")
 

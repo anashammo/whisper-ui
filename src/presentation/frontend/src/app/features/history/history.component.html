@@ -48,6 +48,9 @@
           <span class="metadata-item" *ngIf="transcription.language">
             🌐 {{ transcription.language }}
           </span>
+          <span class="metadata-item" *ngIf="transcription.model">
+            🤖 {{ transcription.model }}
+          </span>
           <span class="metadata-item">
             ⏱️ {{ transcriptionService.formatDuration(transcription.duration_seconds) }}
           </span>

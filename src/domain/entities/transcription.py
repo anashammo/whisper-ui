@@ -30,6 +30,7 @@ class Transcription:
     created_at: datetime
     completed_at: Optional[datetime]
     error_message: Optional[str] = None
+    model: Optional[str] = None
 
     def mark_as_processing(self) -> None:
         """

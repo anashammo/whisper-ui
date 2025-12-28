@@ -2,7 +2,7 @@
 from typing import Dict, Optional
 from dataclasses import dataclass
 from datetime import datetime
-import asyncio
+import threading
 
 
 @dataclass
@@ -21,6 +21,7 @@ class DownloadProgress:
 class ModelDownloadTracker:
     """
     Singleton class to track model download progress across the application.
+    Thread-safe for use in both sync and async contexts.
     """
     _instance = None
 
@@ -33,11 +34,11 @@ class ModelDownloadTracker:
     def _initialize(self):
         """Initialize the tracker"""
         self._progress: Dict[str, DownloadProgress] = {}
-        self._lock = asyncio.Lock()
+        self._lock = threading.Lock()
 
     async def start_download(self, model_name: str, total_bytes: int = 0):
         """Mark a model download as started"""
-        async with self._lock:
+        with self._lock:
             self._progress[model_name] = DownloadProgress(
                 model_name=model_name,
                 status='downloading',
@@ -49,7 +50,7 @@ class ModelDownloadTracker:
 
     async def update_progress(self, model_name: str, bytes_downloaded: int, total_bytes: int):
         """Update download progress for a model"""
-        async with self._lock:
+        with self._lock:
             if model_name in self._progress:
                 progress_pct = (bytes_downloaded / total_bytes * 100) if total_bytes > 0 else 0
                 self._progress[model_name].bytes_downloaded = bytes_downloaded
@@ -58,7 +59,7 @@ class ModelDownloadTracker:
 
     async def complete_download(self, model_name: str):
         """Mark a model download as completed"""
-        async with self._lock:
+        with self._lock:
             if model_name in self._progress:
                 self._progress[model_name].status = 'completed'
                 self._progress[model_name].progress = 100.0
@@ -66,7 +67,7 @@ class ModelDownloadTracker:
 
     async def mark_cached(self, model_name: str):
         """Mark a model as already cached (no download needed)"""
-        async with self._lock:
+        with self._lock:
             self._progress[model_name] = DownloadProgress(
                 model_name=model_name,
                 status='cached',
@@ -77,19 +78,19 @@ class ModelDownloadTracker:
 
     async def set_error(self, model_name: str, error_message: str):
         """Mark a model download as failed"""
-        async with self._lock:
+        with self._lock:
             if model_name in self._progress:
                 self._progress[model_name].status = 'error'
                 self._progress[model_name].error_message = error_message
 
     async def get_progress(self, model_name: str) -> Optional[DownloadProgress]:
         """Get current progress for a model"""
-        async with self._lock:
+        with self._lock:
             return self._progress.get(model_name)
 
     async def clear_progress(self, model_name: str):
         """Clear progress tracking for a model"""
-        async with self._lock:
+        with self._lock:
             if model_name in self._progress:
                 del self._progress[model_name]
 
