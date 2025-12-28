@@ -4,6 +4,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TranscriptionService } from '../../core/services/transcription.service';
 import { Transcription, TranscriptionStatus } from '../../core/models/transcription.model';
+import { PopupService } from '../../shared/services/popup.service';
 
 /**
  * Transcription detail component
@@ -27,7 +28,8 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    public transcriptionService: TranscriptionService
+    public transcriptionService: TranscriptionService,
+    private popupService: PopupService
   ) {}
 
   ngOnInit(): void {
@@ -157,7 +159,10 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   copyToClipboard(): void {
     if (this.transcription?.text) {
       navigator.clipboard.writeText(this.transcription.text).then(() => {
-        alert('Transcription copied to clipboard!');
+        // Use custom success popup instead of browser alert
+        this.popupService.success('Transcription copied to clipboard!')
+          .pipe(takeUntil(this.destroy$))
+          .subscribe();
       });
     }
   }

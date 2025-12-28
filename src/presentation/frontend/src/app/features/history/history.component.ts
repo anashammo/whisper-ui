@@ -4,6 +4,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TranscriptionService } from '../../core/services/transcription.service';
 import { Transcription } from '../../core/models/transcription.model';
+import { PopupService } from '../../shared/services/popup.service';
 
 /**
  * History list component
@@ -25,7 +26,8 @@ export class HistoryComponent implements OnInit, OnDestroy {
 
   constructor(
     public transcriptionService: TranscriptionService,
-    private router: Router
+    private router: Router,
+    private popupService: PopupService
   ) {}
 
   ngOnInit(): void {
@@ -175,18 +177,27 @@ export class HistoryComponent implements OnInit, OnDestroy {
   deleteTranscription(event: Event, transcriptionId: string): void {
     event.stopPropagation(); // Prevent card click event
 
-    if (!confirm('Are you sure you want to delete this transcription? This action cannot be undone.')) {
-      return;
-    }
-
-    this.transcriptionService.deleteTranscription(transcriptionId).subscribe({
-      next: () => {
-        console.log(`Transcription ${transcriptionId} deleted successfully`);
-      },
-      error: (error) => {
-        console.error('Delete failed:', error);
-        this.error = 'Failed to delete transcription: ' + error.message;
+    // Use custom popup instead of browser confirm
+    this.popupService.confirm(
+      'Delete Transcription',
+      'Are you sure you want to delete this transcription? This action cannot be undone.',
+      'Delete',
+      'Cancel'
+    ).pipe(takeUntil(this.destroy$))
+    .subscribe((confirmed) => {
+      if (!confirmed) {
+        return;
       }
+
+      this.transcriptionService.deleteTranscription(transcriptionId).subscribe({
+        next: () => {
+          console.log(`Transcription ${transcriptionId} deleted successfully`);
+        },
+        error: (error) => {
+          console.error('Delete failed:', error);
+          this.error = 'Failed to delete transcription: ' + error.message;
+        }
+      });
     });
   }
 }
