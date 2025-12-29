@@ -1,6 +1,7 @@
 """Use case for re-transcribing existing audio files with different models"""
 from datetime import datetime
 import uuid
+import time
 from typing import Optional
 
 from ...domain.entities.transcription import Transcription, TranscriptionStatus
@@ -82,16 +83,23 @@ class RetranscribeAudioUseCase:
             saved_transcription.mark_as_processing()
             await self.transcription_repo.update(saved_transcription)
 
+            # Measure Whisper processing time
+            start_time = time.time()
+
             result = await self.speech_service.transcribe(
                 audio_file.file_path,
                 language,
                 model
             )
 
+            # Calculate processing time
+            processing_time = time.time() - start_time
+
             saved_transcription.complete(
                 text=result['text'],
                 language=result['language'],
-                duration=result.get('duration') or audio_file.duration_seconds or 0.0
+                duration=result.get('duration') or audio_file.duration_seconds or 0.0,
+                processing_time=processing_time
             )
         except Exception as e:
             saved_transcription.fail(str(e))

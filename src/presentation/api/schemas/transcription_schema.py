@@ -18,6 +18,7 @@ class TranscriptionResponse(BaseModel):
     model: Optional[str] = None
     audio_file_original_filename: Optional[str] = None
     audio_file_uploaded_at: Optional[datetime] = None
+    processing_time_seconds: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -30,6 +31,7 @@ class TranscriptionResponse(BaseModel):
                 "language": "en",
                 "model": "base",
                 "duration_seconds": 45.3,
+                "processing_time_seconds": 12.84,
                 "created_at": "2025-12-28T10:30:00Z",
                 "completed_at": "2025-12-28T10:30:15Z",
                 "error_message": None
@@ -59,7 +61,8 @@ class TranscriptionResponse(BaseModel):
             error_message=dto.error_message,
             model=dto.model,
             audio_file_original_filename=dto.audio_file_original_filename,
-            audio_file_uploaded_at=dto.audio_file_uploaded_at
+            audio_file_uploaded_at=dto.audio_file_uploaded_at,
+            processing_time_seconds=dto.processing_time_seconds
         )
 
 

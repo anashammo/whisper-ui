@@ -1,6 +1,7 @@
 """Use case for transcribing audio files"""
 from datetime import datetime
 import uuid
+import time
 from typing import Optional
 
 from ...domain.entities.transcription import Transcription, TranscriptionStatus
@@ -140,6 +141,9 @@ class TranscribeAudioUseCase:
             saved_transcription.mark_as_processing()
             await self.transcription_repo.update(saved_transcription)
 
+            # Measure Whisper processing time
+            start_time = time.time()
+
             # Perform speech recognition using Whisper
             result = await self.speech_service.transcribe(
                 file_path,
@@ -147,12 +151,16 @@ class TranscribeAudioUseCase:
                 upload_dto.model or "base"
             )
 
+            # Calculate processing time
+            processing_time = time.time() - start_time
+
             # Update transcription with results
             # Note: Don't pass duration from Whisper as we already have the correct
             # duration from the audio file extraction
             saved_transcription.complete(
                 text=result['text'],
-                language=result['language']
+                language=result['language'],
+                processing_time=processing_time
             )
 
         except Exception as e:

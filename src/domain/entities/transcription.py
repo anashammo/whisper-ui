@@ -31,6 +31,7 @@ class Transcription:
     completed_at: Optional[datetime]
     error_message: Optional[str] = None
     model: Optional[str] = None
+    processing_time_seconds: Optional[float] = None
 
     def mark_as_processing(self) -> None:
         """
@@ -46,7 +47,7 @@ class Transcription:
             )
         self.status = TranscriptionStatus.PROCESSING
 
-    def complete(self, text: str, language: str, duration: float = None) -> None:
+    def complete(self, text: str, language: str, duration: float = None, processing_time: float = None) -> None:
         """
         Business rule: complete the transcription with results.
 
@@ -54,6 +55,7 @@ class Transcription:
             text: The transcribed text
             language: Detected language code
             duration: Optional duration in seconds
+            processing_time: Optional processing time in seconds (time spent by Whisper)
 
         Raises:
             ValueError: If transcription is not in PROCESSING state
@@ -73,6 +75,8 @@ class Transcription:
         self.language = language
         if duration is not None:
             self.duration_seconds = duration
+        if processing_time is not None:
+            self.processing_time_seconds = processing_time
         self.status = TranscriptionStatus.COMPLETED
         self.completed_at = datetime.utcnow()
         self.error_message = None

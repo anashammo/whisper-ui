@@ -24,6 +24,7 @@ class TranscriptionDTO:
     model: Optional[str] = None
     audio_file_original_filename: Optional[str] = None  # Denormalized for convenience
     audio_file_uploaded_at: Optional[datetime] = None  # Denormalized for convenience
+    processing_time_seconds: Optional[float] = None
 
     @classmethod
     def from_entity(cls, transcription):
@@ -48,5 +49,6 @@ class TranscriptionDTO:
             created_at=transcription.created_at,
             completed_at=transcription.completed_at,
             error_message=transcription.error_message,
-            model=transcription.model
+            model=transcription.model,
+            processing_time_seconds=transcription.processing_time_seconds
         )

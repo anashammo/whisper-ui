@@ -42,6 +42,7 @@ class TranscriptionModel(Base):
     completed_at = Column(DateTime, nullable=True)
     error_message = Column(Text, nullable=True)
     model = Column(String(50), nullable=True)
+    processing_time_seconds = Column(Float, nullable=True)
 
     # Relationship with audio file
     audio_file = relationship("AudioFileModel", back_populates="transcriptions")

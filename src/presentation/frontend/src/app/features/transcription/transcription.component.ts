@@ -577,4 +577,11 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     const date = new Date(dateString);
     return date.toLocaleString();
   }
+
+  /**
+   * Format processing time for display
+   */
+  formatProcessingTime(seconds: number): string {
+    return `${seconds.toFixed(2)}s`;
+  }
 }
