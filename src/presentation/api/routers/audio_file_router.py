@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional, List
 
+from src.domain.value_objects.model_info import MODEL_VALIDATION_PATTERN
 from src.presentation.api.dependencies import (
     get_retranscribe_audio_use_case,
     get_audio_file_transcriptions_use_case,
@@ -26,7 +27,7 @@ router = APIRouter()
 )
 async def retranscribe_audio(
     audio_file_id: str,
-    model: str = Query(..., pattern="^(tiny|base|small|medium|large|turbo)$", description="Whisper model to use: tiny, base, small, medium, large, turbo"),
+    model: str = Query(..., pattern=MODEL_VALIDATION_PATTERN, description="Whisper model to use: tiny, base, small, medium, large, turbo"),
     language: Optional[str] = Query(None, max_length=10, description="Optional language code (e.g., 'en', 'es')"),
     use_case: RetranscribeAudioUseCase = Depends(get_retranscribe_audio_use_case)
 ):

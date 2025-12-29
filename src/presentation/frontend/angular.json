@@ -56,6 +56,9 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "disableHostCheck": true
+          },
           "configurations": {
             "production": {
               "buildTarget": "whisper-frontend:build:production"
@@ -71,5 +74,5 @@
   },
   "cli": {
     "analytics": "b18ab5d2-e046-4fbd-919f-5f16355b159f"
-  }
+  } 
 }

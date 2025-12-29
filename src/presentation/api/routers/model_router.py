@@ -5,6 +5,7 @@ from typing import Dict
 import asyncio
 import json
 
+from ....domain.value_objects.model_info import get_all_models, get_model_info
 from ....infrastructure.services.whisper_service import WhisperService
 from ....infrastructure.services.model_download_tracker import download_tracker
 from ..dependencies import get_whisper_service
@@ -116,50 +117,9 @@ async def stream_download_progress(model_name: str):
 async def get_available_models() -> Dict:
     """
     Get list of available Whisper models with their information.
-    """
-    models = [
-        {
-            "code": "tiny",
-            "name": "Tiny",
-            "description": "Fastest, least accurate",
-            "size": "~75MB",
-            "size_bytes": 75 * 1024 * 1024
-        },
-        {
-            "code": "base",
-            "name": "Base",
-            "description": "Recommended for most use cases",
-            "size": "~150MB",
-            "size_bytes": 150 * 1024 * 1024
-        },
-        {
-            "code": "small",
-            "name": "Small",
-            "description": "Balanced performance and accuracy",
-            "size": "~500MB",
-            "size_bytes": 500 * 1024 * 1024
-        },
-        {
-            "code": "medium",
-            "name": "Medium",
-            "description": "Better quality, slower",
-            "size": "~1.5GB",
-            "size_bytes": 1500 * 1024 * 1024
-        },
-        {
-            "code": "large",
-            "name": "Large",
-            "description": "Best quality, slowest",
-            "size": "~3GB",
-            "size_bytes": 3000 * 1024 * 1024
-        },
-        {
-            "code": "turbo",
-            "name": "Turbo",
-            "description": "Optimized for speed and accuracy",
-            "size": "~3GB",
-            "size_bytes": 3000 * 1024 * 1024
-        }
-    ]
 
+    Returns model specifications from centralized configuration in
+    domain.value_objects.model_info module.
+    """
+    models = [model.to_dict() for model in get_all_models()]
     return {"models": models}

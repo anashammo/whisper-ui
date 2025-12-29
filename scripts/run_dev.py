@@ -1,4 +1,49 @@
-"""Run development server"""
+"""
+Run the Whisper backend server in development mode.
+
+This script starts the FastAPI backend server using uvicorn with auto-reload
+enabled. It loads configuration from environment variables (.env file) and
+displays startup information.
+
+Difference from run_backend.py:
+    - run_dev.py: Uses settings from .env file, respects all environment variables
+    - run_backend.py: Hardcoded to port 8001, simpler startup script
+
+Configuration:
+    Settings are loaded from .env file via Settings class:
+    - API_HOST (default: 0.0.0.0)
+    - API_PORT (default: 8001)
+    - WHISPER_MODEL (default: base)
+    - WHISPER_DEVICE (default: cuda)
+    - LOG_LEVEL (default: info)
+
+Usage:
+    python scripts/run_dev.py
+
+Features:
+    - Auto-reload on code changes (development mode)
+    - Displays startup information (model, device, ports)
+    - Loads configuration from .env file
+    - Access API docs at http://localhost:{port}/docs
+
+Examples:
+    # Start server with default settings (port 8001)
+    python scripts/run_dev.py
+
+    # Configure via .env file:
+    # API_PORT=8080
+    # WHISPER_MODEL=medium
+    # WHISPER_DEVICE=cpu
+    # Then run:
+    python scripts/run_dev.py
+
+Exit:
+    Press CTRL+C to stop the server
+
+Note:
+    Ensure database is initialized first:
+    python scripts/init_db.py
+"""
 import uvicorn
 import sys
 from pathlib import Path

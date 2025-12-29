@@ -469,12 +469,35 @@ Whisper/
 
 ### Whisper Models
 
-- **tiny**: Fastest, least accurate (~1GB RAM)
-- **base**: Good balance (default, ~1GB RAM)
-- **small**: Better accuracy (~2GB RAM)
-- **medium**: High accuracy (~5GB RAM)
-- **large**: Best accuracy (~10GB RAM)
-- **turbo**: Optimized for speed and accuracy (~5GB RAM)
+Each Whisper model has different trade-offs between speed, accuracy, and resource usage:
+
+| Model | Parameters | Download Size | VRAM Required | Speed | Best For |
+|-------|-----------|---------------|---------------|-------|----------|
+| **tiny** | 39M | ~75MB | ~1GB | ~10x faster | Quick drafts, testing |
+| **base** | 74M | ~150MB | ~1GB | ~7x faster | General use (recommended) |
+| **small** | 244M | ~500MB | ~2GB | ~4x faster | Better accuracy |
+| **medium** | 769M | ~1.5GB | ~5GB | ~2x faster | Important transcriptions |
+| **large** | 1550M | ~3GB | ~10GB | 1x (baseline) | Best accuracy |
+| **turbo** | 809M | ~3GB | ~6GB | ~8x faster | Speed + accuracy optimized |
+
+**Notes**:
+- **Download Size**: Disk space needed to store the model (cached in `~/.cache/whisper/`)
+- **VRAM Required**: GPU memory needed for inference (important for GPU users)
+- **Speed**: Relative to large model on A100 GPU (actual speed depends on hardware)
+- **Turbo Model**: Optimized variant with 8x faster speed, not suitable for translation tasks
+- **English-only variants**: Models with `.en` suffix (e.g., `tiny.en`, `base.en`) perform better for English audio, especially for smaller models
+
+**Model Selection Guide**:
+- **For development/testing**: Use `tiny` for quick iteration
+- **For production (general)**: Use `base` for good balance of speed and accuracy
+- **For high-quality transcriptions**: Use `medium` or `turbo`
+- **For maximum accuracy**: Use `large` (requires powerful GPU)
+- **For English-only audio**: Consider using `.en` variants for better accuracy
+
+**Additional Resources**:
+- [OpenAI Whisper GitHub Repository](https://github.com/openai/whisper) - Official model documentation and benchmarks
+- [Whisper Model Card](https://github.com/openai/whisper/blob/main/model-card.md) - Detailed performance metrics and limitations
+- Model specifications are based on OpenAI's official repository (last updated: December 2025)
 
 ### Environment Variables
 

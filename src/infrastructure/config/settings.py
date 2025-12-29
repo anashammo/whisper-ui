@@ -25,8 +25,8 @@ class Settings(BaseSettings):
 
     # CORS Configuration
     cors_origins: List[str] = Field(
-        default=["http://localhost:4200", "http://localhost:3000"],
-        description="Allowed CORS origins"
+        default=["http://localhost:4200", "http://localhost:3000","*"],
+        description="Allowed CORS origins" 
     )
 
     # Database Configuration

@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from typing import Optional
 import os
 
+from src.domain.value_objects.model_info import MODEL_VALIDATION_PATTERN
 from src.presentation.api.dependencies import (
     get_transcribe_audio_use_case,
     get_transcription_use_case,
@@ -43,7 +44,7 @@ async def create_transcription(
     model: Optional[str] = Query(
         "base",
         description="Whisper model to use: tiny, base, small, medium, large, turbo. Default is 'base'.",
-        pattern="^(tiny|base|small|medium|large|turbo)$"
+        pattern=MODEL_VALIDATION_PATTERN
     ),
     use_case: TranscribeAudioUseCase = Depends(get_transcribe_audio_use_case)
 ):

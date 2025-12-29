@@ -40,7 +40,7 @@ async def lifespan(app: FastAPI):
 
 
 # Initialize FastAPI app
-app = FastAPI(
+app = FastAPI( 
     title=settings.app_name,
     version=settings.app_version,
     description="Voice-to-text transcription API using OpenAI Whisper",
@@ -52,6 +52,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
+    #allow_origin_regex="https://.*\.bore\.digital",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

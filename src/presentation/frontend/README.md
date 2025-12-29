@@ -15,7 +15,7 @@ Angular frontend application for the Whisper voice-to-text transcription system.
 
 - Node.js 18 or higher
 - npm 9 or higher
-- Backend API running on http://localhost:8000
+- Backend API running on http://localhost:8001
 
 ## Installation
 
@@ -39,7 +39,7 @@ The API URL is configured in `src/environments/environment.ts`:
 ```typescript
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8000/api/v1'
+  apiUrl: 'http://localhost:8001/api/v1'
 };
 ```
 
@@ -154,7 +154,7 @@ The application uses a simple, clean design with:
 ### API Connection Issues
 
 If you see "Failed to connect to API":
-1. Ensure backend is running on http://localhost:8000
+1. Ensure backend is running on http://localhost:8001
 2. Check CORS settings in backend allow http://localhost:4200
 3. Verify `environment.ts` has correct API URL
 

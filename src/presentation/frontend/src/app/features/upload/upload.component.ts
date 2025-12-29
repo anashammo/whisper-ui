@@ -57,14 +57,14 @@ export class UploadComponent implements OnInit, OnDestroy {
     { code: 'hi', name: 'Hindi' }
   ];
 
-  // Whisper models
+  // Whisper models - unified descriptions matching backend configuration
   models = [
-    { code: 'tiny', name: 'Tiny (fastest, least accurate)', size: '~75MB' },
-    { code: 'base', name: 'Base (recommended)', size: '~150MB' },
-    { code: 'small', name: 'Small (balanced)', size: '~500MB' },
-    { code: 'medium', name: 'Medium (better quality)', size: '~1.5GB' },
-    { code: 'large', name: 'Large (best quality, slowest)', size: '~3GB' },
-    { code: 'turbo', name: 'Turbo (optimized for speed and accuracy)', size: '~3GB' }
+    { code: 'tiny', name: 'Tiny - Fastest model with acceptable accuracy', size: '~75MB' },
+    { code: 'base', name: 'Base - Recommended for general use (best balance)', size: '~150MB' },
+    { code: 'small', name: 'Small - Balanced performance with better accuracy', size: '~500MB' },
+    { code: 'medium', name: 'Medium - High accuracy for important transcriptions', size: '~1.5GB' },
+    { code: 'large', name: 'Large - Best accuracy for critical transcriptions', size: '~3GB' },
+    { code: 'turbo', name: 'Turbo - Optimized for speed and accuracy', size: '~3GB' }
   ];
 
   constructor(

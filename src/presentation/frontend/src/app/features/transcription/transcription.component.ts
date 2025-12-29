@@ -37,43 +37,43 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   downloadStatus: string = '';
   progressEventSource: EventSource | null = null;
 
-  // Model information
+  // Model information - unified descriptions matching backend configuration
   modelInfo: { [key: string]: { name: string; description: string; params: string; speed: string } } = {
     'tiny': {
       name: 'Tiny',
-      description: 'Fastest model, suitable for quick transcriptions with acceptable accuracy',
+      description: 'Fastest model with acceptable accuracy, ideal for quick drafts and testing',
       params: '39M parameters',
-      speed: 'Very Fast'
+      speed: '~10x faster'
     },
     'base': {
       name: 'Base',
-      description: 'Good balance of speed and accuracy, recommended for most uses',
+      description: 'Recommended for general use, excellent balance of speed and accuracy',
       params: '74M parameters',
-      speed: 'Fast'
+      speed: '~7x faster'
     },
     'small': {
       name: 'Small',
-      description: 'Balanced speed and accuracy, better quality than base',
+      description: 'Balanced performance with better accuracy than base model',
       params: '244M parameters',
-      speed: 'Medium'
+      speed: '~4x faster'
     },
     'medium': {
       name: 'Medium',
-      description: 'Better accuracy than small, suitable for important transcriptions',
+      description: 'High accuracy model suitable for important transcriptions',
       params: '769M parameters',
-      speed: 'Slow'
+      speed: '~2x faster'
     },
     'large': {
       name: 'Large',
       description: 'Best accuracy available, recommended for critical transcriptions',
       params: '1550M parameters',
-      speed: 'Very Slow'
+      speed: '1x (baseline)'
     },
     'turbo': {
       name: 'Turbo',
-      description: 'Optimized for speed and accuracy, excellent performance',
+      description: 'Optimized for speed and accuracy, excellent all-around performance',
       params: '809M parameters',
-      speed: 'Fast'
+      speed: '~8x faster'
     }
   };
 

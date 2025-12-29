@@ -9,6 +9,7 @@ import sys
 
 from ...domain.services.speech_recognition_service import SpeechRecognitionService
 from ...domain.exceptions.domain_exception import ServiceException
+from ...domain.value_objects.model_info import get_model_size_bytes
 from ..config.settings import Settings
 from .model_download_tracker import download_tracker
 from .tqdm_progress_hook import TqdmProgressHook
@@ -145,16 +146,12 @@ class WhisperService(SpeechRecognitionService):
             await download_tracker.mark_cached(model_name)
         else:
             print(f"Model '{model_name}' not cached, will download...")
-            # Estimate model sizes for progress indication
-            model_sizes = {
-                'tiny': 75 * 1024 * 1024,      # ~75MB
-                'base': 150 * 1024 * 1024,     # ~150MB
-                'small': 500 * 1024 * 1024,    # ~500MB
-                'medium': 1500 * 1024 * 1024,  # ~1.5GB
-                'large': 3000 * 1024 * 1024,   # ~3GB
-                'turbo': 3000 * 1024 * 1024    # ~3GB
-            }
-            estimated_size = model_sizes.get(model_name, 150 * 1024 * 1024)
+            # Get estimated model size from centralized configuration
+            try:
+                estimated_size = get_model_size_bytes(model_name)
+            except KeyError:
+                # Fallback to base model size if invalid model name
+                estimated_size = 150 * 1024 * 1024
             await download_tracker.start_download(model_name, estimated_size)
 
             # Monkey-patch tqdm in the whisper module to capture download progress
