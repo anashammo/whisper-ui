@@ -127,15 +127,15 @@ cd ../../..
 
 ```bash
 # Option 1: Using convenience scripts (recommended)
-python scripts/run_backend.py   # Terminal 1 - port 8001
-python scripts/run_frontend.py  # Terminal 2 - port 4200
+python scripts/server/run_backend.py   # Terminal 1 - port 8001
+python scripts/server/run_frontend.py  # Terminal 2 - port 4200
 
 # Option 2: Manual start
 python -m uvicorn src.presentation.api.main:app --host 0.0.0.0 --port 8001 --reload
 cd src/presentation/frontend && ng serve
 
 # Stop servers
-python scripts/stop_all.py
+python scripts/server/stop_all.py
 ```
 
 **Access Points**:
@@ -147,22 +147,22 @@ python scripts/stop_all.py
 
 ```bash
 # Initialize database (creates whisper_transcriptions.db)
-python scripts/init_db.py
+python scripts/setup/init_db.py
 
 # Clean up orphaned transcriptions (manual script)
-python -c "from src.infrastructure.persistence.database import SessionLocal; ..."
+python scripts/maintenance/cleanup_orphaned_transcriptions.py
 ```
 
 ### Model Management
 
 ```bash
 # Download Whisper models (cached in ~/.cache/whisper/)
-python scripts/download_whisper_model.py tiny
-python scripts/download_whisper_model.py base
-python scripts/download_whisper_model.py small
-python scripts/download_whisper_model.py medium
-python scripts/download_whisper_model.py large
-python scripts/download_whisper_model.py turbo
+python scripts/setup/download_whisper_model.py tiny
+python scripts/setup/download_whisper_model.py base
+python scripts/setup/download_whisper_model.py small
+python scripts/setup/download_whisper_model.py medium
+python scripts/setup/download_whisper_model.py large
+python scripts/setup/download_whisper_model.py turbo
 ```
 
 ### Testing & Code Quality

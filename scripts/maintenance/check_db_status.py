@@ -1,4 +1,10 @@
-"""Check database status""" 
+"""Check database status"""
+import sys
+from pathlib import Path
+
+# Add project root to path (scripts/maintenance/ -> scripts/ -> project root)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 from src.infrastructure.persistence.database import SessionLocal
 from src.infrastructure.persistence.models.transcription_model import TranscriptionModel
 from src.infrastructure.persistence.models.audio_file_model import AudioFileModel

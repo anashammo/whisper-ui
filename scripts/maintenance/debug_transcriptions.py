@@ -1,4 +1,10 @@
-"""Debug script to check transcriptions and audio files in database""" 
+"""Debug script to check transcriptions and audio files in database"""
+import sys
+from pathlib import Path
+
+# Add project root to path (scripts/maintenance/ -> scripts/ -> project root)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 import asyncio
 from src.infrastructure.persistence.database import SessionLocal
 from src.infrastructure.persistence.repositories.sqlite_transcription_repository import SQLiteTranscriptionRepository

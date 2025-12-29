@@ -1,4 +1,10 @@
-"""Clean up orphaned transcriptions (transcriptions without corresponding audio files)""" 
+"""Automatically clean up orphaned transcriptions without confirmation"""
+import sys
+from pathlib import Path
+
+# Add project root to path (scripts/maintenance/ -> scripts/ -> project root)
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
 from src.infrastructure.persistence.database import SessionLocal
 from src.infrastructure.persistence.models.transcription_model import TranscriptionModel
 from src.infrastructure.persistence.models.audio_file_model import AudioFileModel
@@ -28,17 +34,13 @@ try:
         for trans in orphaned:
             print(f'  - ID: {trans.id[:8]}... | Audio File ID: {trans.audio_file_id[:8]}... | Model: {trans.model} | Status: {trans.status.value}')
 
-        # Ask for confirmation before deleting
-        response = input('\nDo you want to delete these orphaned transcriptions? (yes/no): ')
-        if response.lower() == 'yes':
-            for trans in orphaned:
-                db.delete(trans)
-            db.commit()
-            print(f'\n✅ Deleted {len(orphaned)} orphaned transcriptions')
-        else:
-            print('\n❌ Cancelled - no transcriptions deleted')
+        print('\nDeleting orphaned transcriptions...')
+        for trans in orphaned:
+            db.delete(trans)
+        db.commit()
+        print(f'\nSuccessfully deleted {len(orphaned)} orphaned transcriptions')
     else:
-        print('\n✅ No orphaned transcriptions found - database is clean!')
+        print('\nNo orphaned transcriptions found - database is clean!')
 
 finally:
     db.close()

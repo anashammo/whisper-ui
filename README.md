@@ -131,7 +131,7 @@ brew install ffmpeg
 ### 6. Download Whisper Model
 
 ```bash
-python scripts/download_whisper_model.py base
+python scripts/setup/download_whisper_model.py base
 ```
 
 Available models: `tiny`, `base`, `small`, `medium`, `large`, `turbo`
@@ -159,7 +159,7 @@ Edit `.env` to configure:
 ### 9. Initialize Database
 
 ```bash
-python scripts/init_db.py
+python scripts/setup/init_db.py
 ```
 
 ## Running the Application
@@ -172,10 +172,10 @@ Open two separate terminals:
 
 ```bash
 # Terminal 1 - Start Backend (port 8001)
-python scripts/run_backend.py
+python scripts/server/run_backend.py
 
 # Terminal 2 - Start Frontend (port 4200)
-python scripts/run_frontend.py
+python scripts/server/run_frontend.py
 ```
 
 **Option 2: Manual start**
@@ -199,13 +199,13 @@ The servers will be available at:
 
 ```bash
 # Stop backend only
-python scripts/stop_backend.py
+python scripts/server/stop_backend.py
 
 # Stop frontend only
-python scripts/stop_frontend.py
+python scripts/server/stop_frontend.py
 
 # Stop both servers at once
-python scripts/stop_all.py
+python scripts/server/stop_all.py
 ```
 
 ## API Endpoints
@@ -452,13 +452,25 @@ Whisper/
 │           ├── package.json      # NPM dependencies
 │           └── angular.json      # Angular configuration
 ├── scripts/                       # Utility scripts
-│   ├── run_backend.py            # Start backend server
-│   ├── run_frontend.py           # Start frontend server
-│   ├── stop_backend.py           # Stop backend server
-│   ├── stop_frontend.py          # Stop frontend server
-│   ├── stop_all.py               # Stop all servers
-│   ├── init_db.py                # Initialize database
-│   └── download_whisper_model.py # Download Whisper models
+│   ├── setup/                    # Setup & initialization
+│   │   ├── init_db.py            # Initialize database
+│   │   └── download_whisper_model.py # Download Whisper models
+│   ├── server/                   # Server management
+│   │   ├── run_backend.py        # Start backend server
+│   │   ├── run_dev.py            # Start with .env config
+│   │   ├── run_frontend.py       # Start frontend server
+│   │   ├── stop_backend.py       # Stop backend server
+│   │   ├── stop_frontend.py      # Stop frontend server
+│   │   └── stop_all.py           # Stop all servers
+│   ├── maintenance/              # Database utilities
+│   │   ├── check_db_status.py    # Check database status
+│   │   ├── show_db_contents.py   # Inspect database
+│   │   ├── debug_transcriptions.py # Debug transcriptions
+│   │   ├── auto_cleanup_orphans.py # Auto cleanup
+│   │   └── cleanup_orphaned_transcriptions.py # Manual cleanup
+│   └── migrations/               # Database migrations
+│       ├── migrate_add_model_column.py # Add model column
+│       └── migrate_add_processing_time.py # Add processing time
 ├── tests/                         # Tests
 ├── requirements.txt               # Python dependencies
 ├── .env.example                   # Environment template
@@ -514,40 +526,62 @@ Each Whisper model has different trade-offs between speed, accuracy, and resourc
 
 ## Utility Scripts
 
-The `scripts/` directory contains helpful utilities:
+The `scripts/` directory contains organized utilities in subfolders:
 
-### Server Management
-
-| Script | Description |
-|--------|-------------|
-| `run_backend.py` | Start the FastAPI backend server on port 8001 |
-| `run_frontend.py` | Start the Angular dev server on port 4200 |
-| `stop_backend.py` | Stop the backend server |
-| `stop_frontend.py` | Stop the frontend server |
-| `stop_all.py` | Stop both backend and frontend servers |
-
-### Database & Models
+### Setup & Initialization (`scripts/setup/`)
 
 | Script | Description |
 |--------|-------------|
 | `init_db.py` | Initialize the SQLite database and create tables |
 | `download_whisper_model.py` | Download a specific Whisper model (tiny/base/small/medium/large/turbo) |
 
+### Server Management (`scripts/server/`)
+
+| Script | Description |
+|--------|-------------|
+| `run_backend.py` | Start the FastAPI backend server on port 8001 |
+| `run_dev.py` | Start backend with .env configuration loading |
+| `run_frontend.py` | Start the Angular dev server on port 4200 |
+| `stop_backend.py` | Stop the backend server |
+| `stop_frontend.py` | Stop the frontend server |
+| `stop_all.py` | Stop both backend and frontend servers |
+
+### Database Maintenance (`scripts/maintenance/`)
+
+| Script | Description |
+|--------|-------------|
+| `check_db_status.py` | Verify database health and check for issues |
+| `show_db_contents.py` | Inspect database contents and records |
+| `debug_transcriptions.py` | Debug transcription-related issues |
+| `auto_cleanup_orphans.py` | Automatically clean up orphaned transcriptions |
+| `cleanup_orphaned_transcriptions.py` | Manually clean up orphaned records |
+
+### Database Migrations (`scripts/migrations/`)
+
+| Script | Description |
+|--------|-------------|
+| `migrate_add_model_column.py` | Migration: Add model column to transcriptions |
+| `migrate_add_processing_time.py` | Migration: Add processing_time_seconds column |
+
 ### Usage Examples
 
 ```bash
 # Download a specific model
-python scripts/download_whisper_model.py medium
+python scripts/setup/download_whisper_model.py medium
 
 # Initialize database
-python scripts/init_db.py
+python scripts/setup/init_db.py
 
 # Start servers
-python scripts/run_backend.py  # Terminal 1
-python scripts/run_frontend.py # Terminal 2
+python scripts/server/run_backend.py  # Terminal 1
+python scripts/server/run_frontend.py # Terminal 2
 
 # Stop servers
-python scripts/stop_all.py
+python scripts/server/stop_all.py
+
+# Database maintenance
+python scripts/maintenance/check_db_status.py
+python scripts/maintenance/show_db_contents.py
 ```
 
 ## Development
@@ -595,7 +629,7 @@ If you encounter import errors:
 ### Database Errors
 
 If database errors occur:
-- Delete the database file and run `python scripts/init_db.py` again
+- Delete the database file and run `python scripts/setup/init_db.py` again
 - Check file permissions on the database file
 
 ## License
