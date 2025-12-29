@@ -248,6 +248,45 @@ export class HistoryComponent implements OnInit, OnDestroy {
   /**
    * Delete a transcription
    */
+  /**
+   * Delete an audio file and all associated transcriptions
+   */
+  deleteAudioFile(audioFileId: string, transcriptionCount: number, event: Event): void {
+    event.stopPropagation(); // Prevent expand/collapse toggle
+
+    const message = transcriptionCount === 1
+      ? 'Are you sure you want to delete this audio file and its transcription? This action cannot be undone.'
+      : `Are you sure you want to delete this audio file and all ${transcriptionCount} transcriptions? This action cannot be undone.`;
+
+    this.popupService.confirm(
+      'Delete Audio File',
+      message,
+      'Delete All',
+      'Cancel'
+    ).pipe(takeUntil(this.destroy$))
+    .subscribe((confirmed) => {
+      if (!confirmed) {
+        return;
+      }
+
+      this.transcriptionService.deleteAudioFile(audioFileId).subscribe({
+        next: () => {
+          console.log(`Audio file ${audioFileId} and all transcriptions deleted successfully`);
+          // Remove from local array
+          this.audioFilesWithTranscriptions = this.audioFilesWithTranscriptions.filter(
+            af => af.audio_file.id !== audioFileId
+          );
+          // Close if was expanded
+          this.expandedAudioFileIds.delete(audioFileId);
+        },
+        error: (error) => {
+          console.error('Delete failed:', error);
+          this.error = 'Failed to delete audio file: ' + (error.error?.detail || error.message);
+        }
+      });
+    });
+  }
+
   deleteTranscription(event: Event, transcriptionId: string): void {
     event.stopPropagation(); // Prevent card click event
 

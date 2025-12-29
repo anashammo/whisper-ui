@@ -75,8 +75,11 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    console.log('[TranscriptionComponent] ngOnInit - Component initialized/reloaded');
+
     // Get transcription ID from route
     const id = this.route.snapshot.paramMap.get('id');
+    console.log('[TranscriptionComponent] Route ID:', id);
 
     if (id) {
       this.loadTranscription(id);
@@ -118,6 +121,8 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    console.log('[TranscriptionComponent] ngOnDestroy - Component being destroyed');
+
     // Stop any playing audio
     if (this.currentAudio) {
       this.currentAudio.pause();
@@ -262,6 +267,8 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
    * Switch to a different transcription tab
    */
   switchTranscription(transcription: Transcription): void {
+    console.log('[TranscriptionComponent] switchTranscription - Switching to:', transcription.id, transcription.model);
+
     // Stop any playing audio
     this.stopAudio();
 
@@ -269,9 +276,11 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     this.activeTranscription = transcription;
 
     // Update URL without triggering navigation/reload
-    // Using location.replaceState to avoid component re-initialization
+    // Using window.history.replaceState to avoid component re-initialization
     const url = this.router.createUrlTree(['/transcription', transcription.id]).toString();
+    console.log('[TranscriptionComponent] Updating URL to:', url);
     window.history.replaceState({}, '', url);
+    console.log('[TranscriptionComponent] URL updated without reload');
   }
 
   /**
@@ -299,6 +308,8 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
    * Submit re-transcription request
    */
   submitRetranscription(): void {
+    console.log('[TranscriptionComponent] submitRetranscription - Starting with model:', this.selectedModel);
+
     if (!this.activeTranscription || !this.selectedModel) {
       return;
     }
@@ -316,6 +327,8 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     this.isRetranscribing = true;
     this.error = null;
 
+    console.log('[TranscriptionComponent] Calling retranscribeAudio for audio file:', this.activeTranscription.audio_file_id);
+
     this.transcriptionService.retranscribeAudio(
       this.activeTranscription.audio_file_id,
       this.selectedModel,
@@ -323,8 +336,10 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     ).pipe(takeUntil(this.destroy$))
     .subscribe({
       next: (newTranscription) => {
+        console.log('[TranscriptionComponent] Re-transcription created:', newTranscription.id, newTranscription.model);
         // Add to all transcriptions list
         this.allTranscriptions.push(newTranscription);
+        console.log('[TranscriptionComponent] Total transcriptions now:', this.allTranscriptions.length);
         // Switch to new transcription tab
         this.switchTranscription(newTranscription);
         // Close dialog
@@ -335,7 +350,7 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
         ).pipe(takeUntil(this.destroy$)).subscribe();
       },
       error: (err) => {
-        console.error('Re-transcription failed:', err);
+        console.error('[TranscriptionComponent] Re-transcription failed:', err);
         const errorMessage = err.error?.detail || 'Failed to start re-transcription';
         this.error = errorMessage;
         this.isRetranscribing = false;

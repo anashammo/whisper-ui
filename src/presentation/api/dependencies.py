@@ -15,6 +15,7 @@ from ...application.use_cases.get_transcription_history_use_case import GetTrans
 from ...application.use_cases.delete_transcription_use_case import DeleteTranscriptionUseCase
 from ...application.use_cases.retranscribe_audio_use_case import RetranscribeAudioUseCase
 from ...application.use_cases.get_audio_file_transcriptions_use_case import GetAudioFileTranscriptionsUseCase
+from ...application.use_cases.delete_audio_file_use_case import DeleteAudioFileUseCase
 
 
 # Singleton services (loaded once and reused)
@@ -175,4 +176,28 @@ def get_audio_file_transcriptions_use_case(
     return GetAudioFileTranscriptionsUseCase(
         transcription_repository=transcription_repo,
         audio_file_repository=audio_file_repo
+    )
+
+
+def get_delete_audio_file_use_case(
+    db: Session = Depends(get_db),
+    file_storage: LocalFileStorage = Depends(get_file_storage)
+) -> DeleteAudioFileUseCase:
+    """
+    Create DeleteAudioFileUseCase with dependencies injected.
+
+    Args:
+        db: Database session
+        file_storage: File storage service
+
+    Returns:
+        DeleteAudioFileUseCase instance
+    """
+    transcription_repo = SQLiteTranscriptionRepository(db)
+    audio_file_repo = SQLiteAudioFileRepository(db)
+
+    return DeleteAudioFileUseCase(
+        audio_file_repository=audio_file_repo,
+        transcription_repository=transcription_repo,
+        file_storage=file_storage
     )

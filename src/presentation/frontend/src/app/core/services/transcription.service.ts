@@ -192,6 +192,25 @@ export class TranscriptionService {
   }
 
   /**
+   * Delete an audio file and all associated transcriptions
+   */
+  deleteAudioFile(audioFileId: string): Observable<void> {
+    return this.apiService.deleteAudioFile(audioFileId).pipe(
+      tap({
+        next: () => {
+          // Remove all transcriptions for this audio file from local list
+          const currentList = this.transcriptions$.value;
+          const updatedList = currentList.filter(t => t.audio_file_id !== audioFileId);
+          this.transcriptions$.next(updatedList);
+        },
+        error: (error) => {
+          this.error$.next(error.error?.detail || 'Failed to delete audio file');
+        }
+      })
+    );
+  }
+
+  /**
    * Get audio URL for a transcription
    */
   getAudioUrl(id: string): string {

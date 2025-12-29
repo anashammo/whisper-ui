@@ -111,6 +111,15 @@ export class ApiService {
   }
 
   /**
+   * Delete an audio file and all associated transcriptions
+   */
+  deleteAudioFile(audioFileId: string): Observable<void> {
+    return this.http.delete<void>(
+      `${this.apiUrl}/audio-files/${audioFileId}`
+    );
+  }
+
+  /**
    * Get audio file URL for a transcription
    */
   getAudioUrl(id: string): string {

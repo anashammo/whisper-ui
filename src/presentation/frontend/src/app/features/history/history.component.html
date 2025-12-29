@@ -31,8 +31,8 @@
       class="audio-file-card"
     >
       <!-- Audio File Header (Clickable to Expand/Collapse) -->
-      <div class="audio-file-header" (click)="toggleExpanded(audioFileGroup.audio_file.id)">
-        <div class="audio-file-info">
+      <div class="audio-file-header">
+        <div class="audio-file-info" (click)="toggleExpanded(audioFileGroup.audio_file.id)">
           <h3 class="audio-filename">{{ audioFileGroup.audio_file.original_filename }}</h3>
           <div class="audio-metadata">
             <span class="metadata-badge">
@@ -46,9 +46,17 @@
             </span>
           </div>
         </div>
-        <button class="expand-button" [class.expanded]="isExpanded(audioFileGroup.audio_file.id)">
-          {{ isExpanded(audioFileGroup.audio_file.id) ? '▼' : '▶' }}
-        </button>
+        <div class="header-actions">
+          <button
+            class="btn btn-delete-audio"
+            (click)="deleteAudioFile(audioFileGroup.audio_file.id, audioFileGroup.transcription_count, $event)"
+            title="Delete audio file and all transcriptions">
+            🗑️ Delete All
+          </button>
+          <button class="expand-button" [class.expanded]="isExpanded(audioFileGroup.audio_file.id)" (click)="toggleExpanded(audioFileGroup.audio_file.id)">
+            {{ isExpanded(audioFileGroup.audio_file.id) ? '▼' : '▶' }}
+          </button>
+        </div>
       </div>
 
       <!-- Expandable Transcriptions Section -->
