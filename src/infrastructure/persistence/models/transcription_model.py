@@ -1,5 +1,5 @@
 """SQLAlchemy model for Transcription entity"""
-from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Enum, Text
+from sqlalchemy import Column, String, Float, DateTime, ForeignKey, Enum, Text, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -43,6 +43,13 @@ class TranscriptionModel(Base):
     error_message = Column(Text, nullable=True)
     model = Column(String(50), nullable=True)
     processing_time_seconds = Column(Float, nullable=True)
+
+    # LLM Enhancement fields
+    enable_llm_enhancement = Column(Boolean, default=False, nullable=False)
+    enhanced_text = Column(Text, nullable=True)
+    llm_processing_time_seconds = Column(Float, nullable=True)
+    llm_enhancement_status = Column(String(20), nullable=True)
+    llm_error_message = Column(Text, nullable=True)
 
     # Relationship with audio file
     audio_file = relationship("AudioFileModel", back_populates="transcriptions")

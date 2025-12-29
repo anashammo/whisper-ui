@@ -78,6 +78,24 @@
           <span class="label">Completed At:</span>
           <span class="value">{{ formatDate(activeTranscription.completed_at) }}</span>
         </div>
+        <div class="metadata-item">
+          <span class="label">Enhanced with LLM:</span>
+          <span class="value">{{ activeTranscription.enable_llm_enhancement ? 'Yes' : 'No' }}</span>
+        </div>
+        <div class="metadata-item" *ngIf="activeTranscription.enable_llm_enhancement && activeTranscription.llm_enhancement_status">
+          <span class="label">LLM Enhancement Status:</span>
+          <span class="value" [ngClass]="{'llm-completed': activeTranscription.llm_enhancement_status === 'completed', 'llm-processing': activeTranscription.llm_enhancement_status === 'processing', 'llm-failed': activeTranscription.llm_enhancement_status === 'failed'}">
+            {{ activeTranscription.llm_enhancement_status }}
+          </span>
+        </div>
+        <div class="metadata-item" *ngIf="activeTranscription.enable_llm_enhancement && activeTranscription.llm_processing_time_seconds !== null && activeTranscription.llm_processing_time_seconds !== undefined">
+          <span class="label">LLM Processing Time:</span>
+          <span class="value">{{ formatProcessingTime(activeTranscription.llm_processing_time_seconds) }}</span>
+        </div>
+        <div class="metadata-item" *ngIf="activeTranscription.enable_llm_enhancement && activeTranscription.llm_error_message">
+          <span class="label">LLM Error:</span>
+          <span class="value error-text">{{ activeTranscription.llm_error_message }}</span>
+        </div>
       </div>
 
       <div class="metadata" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
@@ -132,19 +150,64 @@
           <button class="btn btn-icon" (click)="downloadText()" title="Download as text file">
             💾 Download
           </button>
+          <button
+            *ngIf="canEnhance()"
+            class="btn btn-icon btn-enhance"
+            (click)="enhanceTranscription()"
+            [disabled]="isEnhancing"
+            title="Enhance transcription with LLM"
+          >
+            ✨ {{ isEnhancing ? 'Enhancing...' : 'Enhance with LLM' }}
+          </button>
         </div>
       </div>
 
-      <textarea
-        class="transcription-text-editable"
-        [(ngModel)]="activeTranscription.text"
-        placeholder="Transcribed text will appear here..."
-        rows="15"
-      ></textarea>
+      <!-- Dual Text Areas: Show both if LLM enhancement is enabled -->
+      <div class="text-areas-container" *ngIf="activeTranscription.enable_llm_enhancement; else singleTextArea">
+        <div class="text-area-section">
+          <h4 class="text-area-title">Original Whisper Transcription</h4>
+          <textarea
+            class="transcription-text-editable"
+            [(ngModel)]="activeTranscription.text"
+            placeholder="Transcribed text will appear here..."
+            rows="15"
+          ></textarea>
+          <div class="word-count">
+            Word count: {{ activeTranscription.text ? activeTranscription.text.split(' ').length : 0 }} | Characters: {{ activeTranscription.text ? activeTranscription.text.length : 0 }}
+          </div>
+        </div>
 
-      <div class="word-count">
-        Word count: {{ activeTranscription.text ? activeTranscription.text.split(' ').length : 0 }} | Characters: {{ activeTranscription.text ? activeTranscription.text.length : 0 }}
+        <div class="text-area-section">
+          <h4 class="text-area-title">Enhanced with LLM</h4>
+          <textarea
+            class="transcription-text-editable llm-enhanced"
+            [(ngModel)]="activeTranscription.enhanced_text"
+            placeholder="Enhanced text will appear here after LLM processing..."
+            rows="15"
+            [readonly]="activeTranscription.llm_enhancement_status !== 'completed'"
+          ></textarea>
+          <div class="word-count" *ngIf="activeTranscription.enhanced_text">
+            Word count: {{ activeTranscription.enhanced_text.split(' ').length }} | Characters: {{ activeTranscription.enhanced_text.length }}
+          </div>
+          <div class="llm-processing-indicator" *ngIf="activeTranscription.llm_enhancement_status === 'processing' || isEnhancing">
+            <div class="spinner-small"></div>
+            <span>Processing with LLM...</span>
+          </div>
+        </div>
       </div>
+
+      <!-- Single Text Area Template (when LLM not enabled) -->
+      <ng-template #singleTextArea>
+        <textarea
+          class="transcription-text-editable"
+          [(ngModel)]="activeTranscription.text"
+          placeholder="Transcribed text will appear here..."
+          rows="15"
+        ></textarea>
+        <div class="word-count">
+          Word count: {{ activeTranscription.text ? activeTranscription.text.split(' ').length : 0 }} | Characters: {{ activeTranscription.text ? activeTranscription.text.length : 0 }}
+        </div>
+      </ng-template>
     </div>
   </div>
 
@@ -199,6 +262,14 @@
             </div>
           </div>
           <p class="info-description">{{ info.description }}</p>
+        </div>
+
+        <!-- LLM Enhancement Checkbox -->
+        <div class="llm-enhancement-option">
+          <label>
+            <input type="checkbox" [(ngModel)]="enableLlmEnhancement" />
+            Enhance with LLM (grammar, formatting, filler removal)
+          </label>
         </div>
       </div>
 

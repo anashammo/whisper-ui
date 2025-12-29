@@ -46,6 +46,10 @@ async def create_transcription(
         description="Whisper model to use: tiny, base, small, medium, large, turbo. Default is 'base'.",
         pattern=MODEL_VALIDATION_PATTERN
     ),
+    enable_llm_enhancement: bool = Query(
+        False,
+        description="Enable LLM enhancement for this transcription (grammar, formatting, filler removal)"
+    ),
     use_case: TranscribeAudioUseCase = Depends(get_transcribe_audio_use_case)
 ):
     """
@@ -67,7 +71,8 @@ async def create_transcription(
             file_size=len(content),
             mime_type=file.content_type or "application/octet-stream",
             language=language,
-            model=model or "base"
+            model=model or "base",
+            enable_llm_enhancement=enable_llm_enhancement
         )
 
         # Execute use case

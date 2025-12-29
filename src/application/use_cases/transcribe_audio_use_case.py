@@ -129,7 +129,8 @@ class TranscribeAudioUseCase:
             created_at=datetime.utcnow(),
             completed_at=None,
             error_message=None,
-            model=upload_dto.model or "base"
+            model=upload_dto.model or "base",
+            enable_llm_enhancement=upload_dto.enable_llm_enhancement
         )
 
         # Step 6: Persist transcription (PENDING status)

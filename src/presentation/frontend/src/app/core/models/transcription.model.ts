@@ -15,6 +15,13 @@ export interface Transcription {
   audio_file_original_filename: string | null;
   audio_file_uploaded_at: string | null;
   processing_time_seconds: number | null;
+
+  // LLM Enhancement fields
+  enable_llm_enhancement: boolean;
+  enhanced_text: string | null;
+  llm_processing_time_seconds: number | null;
+  llm_enhancement_status: string | null;
+  llm_error_message: string | null;
 }
 
 /**

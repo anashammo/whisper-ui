@@ -33,7 +33,8 @@ class RetranscribeAudioUseCase:
         self,
         audio_file_id: str,
         model: str,
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        enable_llm_enhancement: bool = False
     ) -> TranscriptionDTO:
         """
         Execute re-transcription workflow.
@@ -72,7 +73,8 @@ class RetranscribeAudioUseCase:
             created_at=datetime.utcnow(),
             completed_at=None,
             error_message=None,
-            model=model
+            model=model,
+            enable_llm_enhancement=enable_llm_enhancement
         )
 
         # Step 4: Persist transcription

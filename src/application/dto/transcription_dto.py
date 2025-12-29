@@ -26,6 +26,13 @@ class TranscriptionDTO:
     audio_file_uploaded_at: Optional[datetime] = None  # Denormalized for convenience
     processing_time_seconds: Optional[float] = None
 
+    # LLM Enhancement fields
+    enable_llm_enhancement: bool = False
+    enhanced_text: Optional[str] = None
+    llm_processing_time_seconds: Optional[float] = None
+    llm_enhancement_status: Optional[str] = None
+    llm_error_message: Optional[str] = None
+
     @classmethod
     def from_entity(cls, transcription):
         """
@@ -50,5 +57,11 @@ class TranscriptionDTO:
             completed_at=transcription.completed_at,
             error_message=transcription.error_message,
             model=transcription.model,
-            processing_time_seconds=transcription.processing_time_seconds
+            processing_time_seconds=transcription.processing_time_seconds,
+            # LLM Enhancement fields
+            enable_llm_enhancement=transcription.enable_llm_enhancement,
+            enhanced_text=transcription.enhanced_text,
+            llm_processing_time_seconds=transcription.llm_processing_time_seconds,
+            llm_enhancement_status=transcription.llm_enhancement_status,
+            llm_error_message=transcription.llm_error_message
         )

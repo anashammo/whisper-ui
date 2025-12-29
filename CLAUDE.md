@@ -4,9 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A GPU-accelerated voice-to-text transcription system using OpenAI Whisper with FastAPI backend and Angular frontend. Supports multiple model transcriptions per audio file (tiny/base/small/medium/large/turbo) with real-time progress tracking and grouped history view.
+A GPU-accelerated voice-to-text transcription system using OpenAI Whisper with FastAPI backend and Angular frontend. Supports multiple model transcriptions per audio file (tiny/base/small/medium/large/turbo) with real-time progress tracking, grouped history view, and LLM-based transcription enhancement.
 
-**Key Feature**: Users can upload audio once and transcribe with multiple Whisper models to compare accuracy/speed tradeoffs. Transcriptions are displayed ordered by model size (smallest to largest).
+**Key Features**:
+- Users can upload audio once and transcribe with multiple Whisper models to compare accuracy/speed tradeoffs
+- Transcriptions can be enhanced with local LLM (Ollama/LM Studio) for grammar correction, formatting, and filler removal
+- Transcriptions are displayed ordered by model size (smallest to largest)
+- Dual text display shows original Whisper and LLM-enhanced versions side-by-side
 
 ## Architecture
 
@@ -32,23 +36,27 @@ src/
 ├── domain/                      # Pure business logic, no external dependencies
 │   ├── entities/               # Transcription, AudioFile (dataclasses with business rules)
 │   ├── repositories/           # Abstract repository interfaces
-│   ├── services/              # Abstract service interfaces (SpeechRecognitionService)
+│   ├── services/              # Abstract service interfaces (SpeechRecognitionService, LLMEnhancementService)
 │   └── exceptions/            # Domain-specific exceptions
 │
 ├── application/                # Use cases orchestrate domain logic
-│   ├── use_cases/             # TranscribeAudioUseCase, RetranscribeAudioUseCase, etc.
+│   ├── use_cases/             # TranscribeAudioUseCase, RetranscribeAudioUseCase, EnhanceTranscriptionUseCase
 │   └── dto/                   # Data transfer objects for cross-layer communication
 │
 ├── infrastructure/             # External implementations
 │   ├── persistence/
 │   │   ├── models/            # SQLAlchemy ORM models (NOT domain entities)
 │   │   └── repositories/      # SQLiteTranscriptionRepository implements domain interfaces
-│   ├── services/              # WhisperService (implements SpeechRecognitionService)
+│   ├── services/              # WhisperService, LLMEnhancementServiceImpl
 │   └── storage/               # LocalFileStorage for audio files
 │
 └── presentation/
+    ├── agent/                 # LangGraph agent for LLM enhancement
+    │   ├── prompts.py        # System and user prompts for LLM
+    │   ├── llm_client.py     # OpenAI-compatible LLM client
+    │   └── enhancement_agent.py  # LangGraph workflow
     ├── api/                   # FastAPI routers, schemas, dependencies
-    │   ├── routers/          # transcription_router, audio_file_router, etc.
+    │   ├── routers/          # transcription_router, audio_file_router, llm_enhancement_router
     │   ├── schemas/          # Pydantic models for request/response
     │   └── dependencies.py   # Dependency injection with @lru_cache for singletons
     └── frontend/             # Angular SPA
@@ -88,6 +96,13 @@ transcriptions
   - duration_seconds  # Copied from audio_file
   - created_at
   - completed_at
+
+  # LLM Enhancement fields (added December 2025)
+  - enable_llm_enhancement (boolean, default: false)
+  - enhanced_text (text, nullable)
+  - llm_processing_time_seconds (float, nullable)
+  - llm_enhancement_status (varchar, nullable: processing/completed/failed)
+  - llm_error_message (text, nullable)
 ```
 
 **UI Features**:
@@ -95,9 +110,30 @@ transcriptions
 - Transcription Detail view tabs are ordered by model size
 - Re-transcription dropdown only shows models not yet used for that audio file
 - Audio file metadata (ID, original filename, upload date) displayed in detail view
+- Dual text areas show original Whisper and LLM-enhanced transcriptions side-by-side (when LLM enabled)
+- "Enhance with LLM" button for completed transcriptions that opted in
+- LLM enhancement checkbox in upload/recording/re-transcription forms
 - Footer includes link to WER (Word Error Rate) comparison tool
 
 **Important**: When audio file is deleted, all associated transcriptions are automatically deleted (CASCADE).
+
+### Data Flow Example (LLM Enhancement)
+
+1. **Frontend** → POST `/api/v1/transcriptions/{id}/enhance`
+2. **Router** (`llm_enhancement_router.py`) → validates input, calls use case via dependency injection
+3. **Use Case** (`EnhanceTranscriptionUseCase`) → orchestrates:
+   - Fetch Transcription entity from repository
+   - Validate business rules via `transcription.can_be_enhanced()`
+   - Mark as processing via `transcription.mark_llm_processing()`
+   - Call LLM enhancement service (LangGraph agent)
+   - Complete or fail based on result via `transcription.complete_llm_enhancement()` or `transcription.fail_llm_enhancement()`
+4. **LLM Service** (Infrastructure) → calls presentation agent
+5. **Agent** (`enhancement_agent.py`) → LangGraph workflow:
+   - Uses LLM client to call local LLM (Ollama/LM Studio)
+   - Applies enhancement prompts (grammar, formatting, filler removal)
+   - Returns enhanced text
+6. **Repository** → persists updated transcription to SQLite
+7. **Frontend** → displays dual text areas with original and enhanced text
 
 ## Development Commands
 

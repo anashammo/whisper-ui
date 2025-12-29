@@ -30,6 +30,10 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   selectedModel: string = 'base';
   availableModels: string[] = ['tiny', 'base', 'small', 'medium', 'large', 'turbo'];
   isRetranscribing: boolean = false;
+  enableLlmEnhancement: boolean = false;
+
+  // LLM Enhancement state
+  isEnhancing: boolean = false;
 
   // Model download progress
   isDownloadingModel: boolean = false;
@@ -485,7 +489,8 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     this.transcriptionService.retranscribeAudio(
       this.activeTranscription.audio_file_id,
       this.selectedModel,
-      this.activeTranscription.language || undefined
+      this.activeTranscription.language || undefined,
+      this.enableLlmEnhancement
     ).pipe(takeUntil(this.destroy$))
     .subscribe({
       next: (newTranscription) => {
@@ -583,5 +588,71 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
    */
   formatProcessingTime(seconds: number): string {
     return `${seconds.toFixed(2)}s`;
+  }
+
+  /**
+   * Check if the active transcription can be enhanced with LLM
+   */
+  canEnhance(): boolean {
+    if (!this.activeTranscription) {
+      return false;
+    }
+
+    return (
+      this.activeTranscription.enable_llm_enhancement &&
+      this.activeTranscription.status === TranscriptionStatus.COMPLETED &&
+      this.activeTranscription.text !== null &&
+      this.activeTranscription.text.trim() !== '' &&
+      this.activeTranscription.text !== '(No speech detected)' &&
+      (this.activeTranscription.llm_enhancement_status === null ||
+       this.activeTranscription.llm_enhancement_status === 'failed')
+    );
+  }
+
+  /**
+   * Enhance the active transcription with LLM
+   */
+  enhanceTranscription(): void {
+    if (!this.activeTranscription || !this.canEnhance()) {
+      return;
+    }
+
+    this.isEnhancing = true;
+    this.error = null;
+
+    this.transcriptionService.enhanceTranscription(this.activeTranscription.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (enhancedTranscription) => {
+          console.log('[TranscriptionComponent] Enhancement completed:', enhancedTranscription);
+          this.isEnhancing = false;
+
+          // Update the active transcription and reload all transcriptions
+          this.activeTranscription = enhancedTranscription;
+          if (enhancedTranscription.audio_file_id) {
+            this.loadAllTranscriptions(enhancedTranscription.audio_file_id);
+          }
+
+          this.popupService.success('Transcription enhanced successfully!')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe();
+        },
+        error: (err) => {
+          console.error('[TranscriptionComponent] Enhancement failed:', err);
+          this.isEnhancing = false;
+
+          let errorMessage = 'Failed to enhance transcription';
+          if (err.error?.detail) {
+            errorMessage = typeof err.error.detail === 'string'
+              ? err.error.detail
+              : JSON.stringify(err.error.detail);
+          }
+
+          this.error = errorMessage;
+          this.popupService.error(errorMessage)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe();
+        }
+      });
   }
 }
