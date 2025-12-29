@@ -34,6 +34,7 @@
       <div class="audio-file-header">
         <div class="audio-file-info" (click)="toggleExpanded(audioFileGroup.audio_file.id)">
           <h3 class="audio-filename">{{ audioFileGroup.audio_file.original_filename }}</h3>
+          <div class="audio-file-id">ID: {{ audioFileGroup.audio_file.id }}</div>
           <div class="audio-metadata">
             <span class="metadata-badge">
               📊 {{ audioFileGroup.transcription_count }} transcription(s)

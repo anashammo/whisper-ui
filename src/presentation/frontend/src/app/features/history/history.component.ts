@@ -140,7 +140,7 @@ export class HistoryComponent implements OnInit, OnDestroy {
       result.push({
         audio_file: {
           id: audioFileId,
-          original_filename: `Audio File ${audioFileId.substring(0, 8)}`, // Placeholder - will be replaced when backend provides filename
+          original_filename: firstTrans.audio_file_original_filename || `Audio File ${audioFileId.substring(0, 8)}`,
           file_size_bytes: 0, // Placeholder
           mime_type: '', // Placeholder
           duration_seconds: firstTrans.duration_seconds,
@@ -254,6 +254,9 @@ export class HistoryComponent implements OnInit, OnDestroy {
   deleteAudioFile(audioFileId: string, transcriptionCount: number, event: Event): void {
     event.stopPropagation(); // Prevent expand/collapse toggle
 
+    console.log('[HistoryComponent] deleteAudioFile called with ID:', audioFileId);
+    console.log('[HistoryComponent] Transcription count:', transcriptionCount);
+
     const message = transcriptionCount === 1
       ? 'Are you sure you want to delete this audio file and its transcription? This action cannot be undone.'
       : `Are you sure you want to delete this audio file and all ${transcriptionCount} transcriptions? This action cannot be undone.`;
@@ -266,12 +269,14 @@ export class HistoryComponent implements OnInit, OnDestroy {
     ).pipe(takeUntil(this.destroy$))
     .subscribe((confirmed) => {
       if (!confirmed) {
+        console.log('[HistoryComponent] Delete cancelled by user');
         return;
       }
 
+      console.log('[HistoryComponent] Delete confirmed, calling API with ID:', audioFileId);
       this.transcriptionService.deleteAudioFile(audioFileId).subscribe({
         next: () => {
-          console.log(`Audio file ${audioFileId} and all transcriptions deleted successfully`);
+          console.log(`[HistoryComponent] ✅ Audio file ${audioFileId} and all transcriptions deleted successfully`);
           // Remove from local array
           this.audioFilesWithTranscriptions = this.audioFilesWithTranscriptions.filter(
             af => af.audio_file.id !== audioFileId
@@ -280,8 +285,11 @@ export class HistoryComponent implements OnInit, OnDestroy {
           this.expandedAudioFileIds.delete(audioFileId);
         },
         error: (error) => {
-          console.error('Delete failed:', error);
-          this.error = 'Failed to delete audio file: ' + (error.error?.detail || error.message);
+          console.error('[HistoryComponent] ❌ Delete failed with error:', error);
+          console.error('[HistoryComponent] Error status:', error.status);
+          console.error('[HistoryComponent] Error detail:', error.error?.detail);
+          console.error('[HistoryComponent] Full error object:', JSON.stringify(error, null, 2));
+          this.error = 'Failed to delete audio file: ' + (error.error?.detail || error.message || 'Unknown error');
         }
       });
     });

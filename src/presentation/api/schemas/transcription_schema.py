@@ -16,6 +16,7 @@ class TranscriptionResponse(BaseModel):
     completed_at: Optional[datetime] = None
     error_message: Optional[str] = None
     model: Optional[str] = None
+    audio_file_original_filename: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -55,7 +56,8 @@ class TranscriptionResponse(BaseModel):
             created_at=dto.created_at,
             completed_at=dto.completed_at,
             error_message=dto.error_message,
-            model=dto.model
+            model=dto.model,
+            audio_file_original_filename=dto.audio_file_original_filename
         )
 
 

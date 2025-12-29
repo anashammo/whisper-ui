@@ -317,8 +317,16 @@
 .audio-filename {
   color: #f7fafc;
   font-size: 1.1rem;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.5rem 0;
   font-weight: 600;
+}
+
+.audio-file-id {
+  color: #718096;
+  font-size: 0.75rem;
+  font-family: monospace;
+  margin: 0 0 0.75rem 0;
+  letter-spacing: 0.025em;
 }
 
 .audio-metadata {

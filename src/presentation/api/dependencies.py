@@ -107,7 +107,8 @@ def get_transcription_history_use_case(
         GetTranscriptionHistoryUseCase instance
     """
     transcription_repo = SQLiteTranscriptionRepository(db)
-    return GetTranscriptionHistoryUseCase(transcription_repo)
+    audio_file_repo = SQLiteAudioFileRepository(db)
+    return GetTranscriptionHistoryUseCase(transcription_repo, audio_file_repo)
 
 
 def get_delete_transcription_use_case(
