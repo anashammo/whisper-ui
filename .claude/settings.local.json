@@ -38,7 +38,9 @@
       "Bash(tasklist:*)",
       "Bash(timeout /t 5 /nobreak)",
       "Bash(find:*)",
-      "Bash(venv\\\\Scripts\\\\python.exe -m uvicorn:*)"
+      "Bash(venv\\\\Scripts\\\\python.exe -m uvicorn:*)",
+      "Bash(dir:*)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }
