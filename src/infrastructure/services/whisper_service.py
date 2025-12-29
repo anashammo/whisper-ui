@@ -151,7 +151,8 @@ class WhisperService(SpeechRecognitionService):
                 'base': 150 * 1024 * 1024,     # ~150MB
                 'small': 500 * 1024 * 1024,    # ~500MB
                 'medium': 1500 * 1024 * 1024,  # ~1.5GB
-                'large': 3000 * 1024 * 1024    # ~3GB
+                'large': 3000 * 1024 * 1024,   # ~3GB
+                'turbo': 3000 * 1024 * 1024    # ~3GB
             }
             estimated_size = model_sizes.get(model_name, 150 * 1024 * 1024)
             await download_tracker.start_download(model_name, estimated_size)

@@ -112,6 +112,21 @@ export class HistoryComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Get model size order for sorting (smaller to larger)
+   */
+  private getModelSizeOrder(model: string | null): number {
+    const modelOrder: { [key: string]: number } = {
+      'tiny': 0,
+      'base': 1,
+      'small': 2,
+      'medium': 3,
+      'large': 4,
+      'turbo': 5
+    };
+    return model ? (modelOrder[model] ?? 999) : 999;
+  }
+
+  /**
    * Group transcriptions by audio file
    */
   private groupTranscriptionsByAudioFile(transcriptions: Transcription[]): AudioFileWithTranscriptions[] {
@@ -129,9 +144,9 @@ export class HistoryComponent implements OnInit, OnDestroy {
     // Convert map to array of AudioFileWithTranscriptions
     const result: AudioFileWithTranscriptions[] = [];
     groupedMap.forEach((transcriptionList, audioFileId) => {
-      // Sort transcriptions by created_at DESC (newest first)
+      // Sort transcriptions by model size (smaller to larger)
       transcriptionList.sort((a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        this.getModelSizeOrder(a.model) - this.getModelSizeOrder(b.model)
       );
 
       // Use the first (most recent) transcription to get audio file metadata
@@ -144,7 +159,7 @@ export class HistoryComponent implements OnInit, OnDestroy {
           file_size_bytes: 0, // Placeholder
           mime_type: '', // Placeholder
           duration_seconds: firstTrans.duration_seconds,
-          uploaded_at: firstTrans.created_at
+          uploaded_at: firstTrans.audio_file_uploaded_at || firstTrans.created_at
         },
         transcriptions: transcriptionList,
         transcription_count: transcriptionList.length

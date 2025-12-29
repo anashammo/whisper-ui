@@ -37,4 +37,13 @@ class GetAudioFileTranscriptionsUseCase:
 
         # Get all transcriptions for this audio file
         transcriptions = await self.transcription_repo.get_by_audio_file_id(audio_file_id)
-        return [TranscriptionDTO.from_entity(t) for t in transcriptions]
+
+        # Convert to DTOs and populate audio file information
+        result = []
+        for t in transcriptions:
+            dto = TranscriptionDTO.from_entity(t)
+            dto.audio_file_original_filename = audio_file.original_filename
+            dto.audio_file_uploaded_at = audio_file.uploaded_at
+            result.append(dto)
+
+        return result

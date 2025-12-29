@@ -17,7 +17,6 @@
       "Bash(npm start)",
       "Bash(python -m json.tool:*)",
       "Bash(Get-Process -Name python -ErrorAction SilentlyContinue)",
-      "Bash(Where-Object {$_Path -like \"*Whisper*\"})",
       "Bash(Stop-Process -Force)",
       "Bash(taskkill:*)",
       "Bash(cat:*)",
@@ -28,7 +27,18 @@
       "Bash(timeout /t 3 /nobreak)",
       "Bash(ping:*)",
       "Bash(git init:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: Whisper voice-to-text transcription system\n\nImplemented a full-stack voice-to-text transcription application using OpenAI Whisper with FastAPI backend and Angular frontend.\n\nFeatures:\n- Audio file upload with drag & drop support \\(MP3, WAV, M4A, FLAC, OGG, WEBM\\)\n- Browser-based audio recording \\(up to 30 seconds\\)\n- Real-time transcription using Whisper \\(GPU-accelerated with RTX 5090\\)\n- Multiple Whisper model support \\(tiny, base, small, medium, large\\)\n- Model download progress tracking with real-time SSE updates\n- Audio playback with play/stop controls\n- Transcription history with delete functionality\n- Editable transcription text\n- Language selection support\n- Dark mode UI\n\nBackend Architecture \\(Clean Architecture\\):\n- Domain layer: Entities, repositories, services \\(business logic\\)\n- Application layer: Use cases, DTOs \\(orchestration\\)\n- Infrastructure layer: Whisper service, SQLite persistence, file storage\n- Presentation layer: FastAPI REST API, Angular SPA\n\nAPI Endpoints:\n- POST /api/v1/transcriptions - Upload and transcribe audio\n- GET /api/v1/transcriptions - Get transcription history\n- GET /api/v1/transcriptions/{id} - Get specific transcription\n- DELETE /api/v1/transcriptions/{id} - Delete transcription\n- GET /api/v1/transcriptions/{id}/audio - Download original audio\n- GET /api/v1/models/status/{model} - Check model cache status\n- GET /api/v1/models/download-progress/{model} - SSE stream for download progress\n- GET /api/v1/models/available - List available models\n\nTech Stack:\n- Backend: Python 3.9+, FastAPI, SQLAlchemy, SQLite, OpenAI Whisper, PyTorch\n- Frontend: Angular 17, TypeScript, RxJS\n- GPU: CUDA support for accelerated inference\n- Audio: ffmpeg for audio processing\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(findstr:*)",
+      "Bash(timeout /t 10 /nobreak)",
+      "Bash(python:*)",
+      "Bash(powershell -Command \"Stop-Process -Id 78416 -Force\")",
+      "Bash(powershell -Command:*)",
+      "Bash(venv\\\\Scripts\\\\python.exe:*)",
+      "Bash(tasklist:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(find:*)",
+      "Bash(venv\\\\Scripts\\\\python.exe -m uvicorn:*)"
     ]
   }
 }

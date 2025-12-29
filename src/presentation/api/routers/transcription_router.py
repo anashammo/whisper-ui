@@ -42,8 +42,8 @@ async def create_transcription(
     ),
     model: Optional[str] = Query(
         "base",
-        description="Whisper model to use: tiny, base, small, medium, large. Default is 'base'.",
-        pattern="^(tiny|base|small|medium|large)$"
+        description="Whisper model to use: tiny, base, small, medium, large, turbo. Default is 'base'.",
+        pattern="^(tiny|base|small|medium|large|turbo)$"
     ),
     use_case: TranscribeAudioUseCase = Depends(get_transcribe_audio_use_case)
 ):

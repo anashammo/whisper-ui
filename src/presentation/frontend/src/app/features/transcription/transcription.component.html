@@ -23,7 +23,7 @@
     </div>
 
     <!-- Model Tabs (Show when multiple transcriptions exist) -->
-    <div class="model-tabs" *ngIf="allTranscriptions.length > 1">
+    <div class="model-tabs" *ngIf="allTranscriptions && allTranscriptions.length > 1 && activeTranscription">
       <button
         *ngFor="let trans of allTranscriptions"
         class="tab-button"
@@ -57,8 +57,9 @@
       </div>
 
       <div class="metadata">
+        <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">Transcription Information</h4>
         <div class="metadata-item">
-          <span class="label">ID:</span>
+          <span class="label">Transcription ID:</span>
           <span class="value">{{ activeTranscription.id }}</span>
         </div>
         <div class="metadata-item" *ngIf="activeTranscription.language">
@@ -69,13 +70,29 @@
           <span class="label">Model:</span>
           <span class="value">{{ activeTranscription.model }}</span>
         </div>
+        <div class="metadata-item" *ngIf="activeTranscription.completed_at">
+          <span class="label">Completed At:</span>
+          <span class="value">{{ formatDate(activeTranscription.completed_at) }}</span>
+        </div>
+      </div>
+
+      <div class="metadata" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
+        <h4 style="margin: 0 0 0.5rem 0; font-size: 0.9rem; color: #666;">Audio File Information</h4>
+        <div class="metadata-item">
+          <span class="label">Audio File ID:</span>
+          <span class="value">{{ activeTranscription.audio_file_id }}</span>
+        </div>
+        <div class="metadata-item" *ngIf="activeTranscription.audio_file_original_filename">
+          <span class="label">Original Filename:</span>
+          <span class="value">{{ activeTranscription.audio_file_original_filename }}</span>
+        </div>
         <div class="metadata-item">
           <span class="label">Duration:</span>
           <span class="value">{{ transcriptionService.formatDuration(activeTranscription.duration_seconds) }}</span>
         </div>
-        <div class="metadata-item" *ngIf="activeTranscription.completed_at">
-          <span class="label">Completed:</span>
-          <span class="value">{{ formatDate(activeTranscription.completed_at) }}</span>
+        <div class="metadata-item" *ngIf="activeTranscription.audio_file_uploaded_at">
+          <span class="label">Created At:</span>
+          <span class="value">{{ formatDate(activeTranscription.audio_file_uploaded_at) }}</span>
         </div>
       </div>
     </div>
@@ -147,12 +164,22 @@
             id="model-select"
             class="model-select"
             [(ngModel)]="selectedModel"
-            [disabled]="isRetranscribing"
+            (ngModelChange)="onModelChange()"
+            [disabled]="isRetranscribing || isDownloadingModel"
           >
-            <option *ngFor="let model of availableModels" [value]="model">
-              {{ model }} {{ isModelAlreadyTranscribed(model) ? '(already transcribed)' : '' }}
+            <option *ngFor="let model of getModelsNotYetTranscribed()" [value]="model">
+              {{ model }}
             </option>
           </select>
+        </div>
+
+        <!-- Download Progress Bar -->
+        <div class="download-progress" *ngIf="isDownloadingModel">
+          <div class="progress-label">Downloading model {{ selectedModel }}...</div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" [style.width.%]="downloadProgress"></div>
+          </div>
+          <div class="progress-text">{{ downloadProgress.toFixed(1) }}%</div>
         </div>
 
         <div class="model-info" *ngIf="getSelectedModelInfo() as info">
@@ -172,11 +199,11 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeRetranscribeDialog()" [disabled]="isRetranscribing">
+        <button class="btn btn-secondary" (click)="closeRetranscribeDialog()" [disabled]="isRetranscribing || isDownloadingModel">
           Cancel
         </button>
-        <button class="btn btn-primary" (click)="submitRetranscription()" [disabled]="isRetranscribing">
-          {{ isRetranscribing ? 'Starting...' : 'Start Transcription' }}
+        <button class="btn btn-primary" (click)="submitRetranscription()" [disabled]="isRetranscribing || isDownloadingModel">
+          {{ isDownloadingModel ? 'Downloading...' : (isRetranscribing ? 'Starting...' : 'Start Transcription') }}
         </button>
       </div>
     </div>

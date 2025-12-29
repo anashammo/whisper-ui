@@ -63,7 +63,8 @@ export class UploadComponent implements OnInit, OnDestroy {
     { code: 'base', name: 'Base (recommended)', size: '~150MB' },
     { code: 'small', name: 'Small (balanced)', size: '~500MB' },
     { code: 'medium', name: 'Medium (better quality)', size: '~1.5GB' },
-    { code: 'large', name: 'Large (best quality, slowest)', size: '~3GB' }
+    { code: 'large', name: 'Large (best quality, slowest)', size: '~3GB' },
+    { code: 'turbo', name: 'Turbo (optimized for speed and accuracy)', size: '~3GB' }
   ];
 
   constructor(

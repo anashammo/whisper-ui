@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A GPU-accelerated voice-to-text transcription system using OpenAI Whisper with FastAPI backend and Angular frontend. Supports multiple model transcriptions per audio file (tiny/base/small/medium/large) with real-time progress tracking and grouped history view.
+A GPU-accelerated voice-to-text transcription system using OpenAI Whisper with FastAPI backend and Angular frontend. Supports multiple model transcriptions per audio file (tiny/base/small/medium/large/turbo) with real-time progress tracking and grouped history view.
 
-**Key Feature**: Users can upload audio once and transcribe with multiple Whisper models to compare accuracy/speed tradeoffs.
+**Key Feature**: Users can upload audio once and transcribe with multiple Whisper models to compare accuracy/speed tradeoffs. Transcriptions are displayed ordered by model size (smallest to largest).
 
 ## Architecture
 
@@ -82,13 +82,20 @@ audio_files
 transcriptions
   - id (PK)
   - audio_file_id (FK → audio_files.id, CASCADE DELETE)
-  - model (tiny/base/small/medium/large)
+  - model (tiny/base/small/medium/large/turbo)
   - text
   - status (pending/processing/completed/failed)
   - duration_seconds  # Copied from audio_file
   - created_at
   - completed_at
 ```
+
+**UI Features**:
+- Transcriptions in History view are sorted by model size (tiny → turbo)
+- Transcription Detail view tabs are ordered by model size
+- Re-transcription dropdown only shows models not yet used for that audio file
+- Audio file metadata (ID, original filename, upload date) displayed in detail view
+- Footer includes link to WER (Word Error Rate) comparison tool
 
 **Important**: When audio file is deleted, all associated transcriptions are automatically deleted (CASCADE).
 
@@ -155,6 +162,7 @@ python scripts/download_whisper_model.py base
 python scripts/download_whisper_model.py small
 python scripts/download_whisper_model.py medium
 python scripts/download_whisper_model.py large
+python scripts/download_whisper_model.py turbo
 ```
 
 ### Testing & Code Quality

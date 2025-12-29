@@ -13,6 +13,7 @@ export interface Transcription {
   error_message: string | null;
   model: string | null;
   audio_file_original_filename: string | null;
+  audio_file_uploaded_at: string | null;
 }
 
 /**

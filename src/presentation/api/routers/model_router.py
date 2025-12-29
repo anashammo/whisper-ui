@@ -152,6 +152,13 @@ async def get_available_models() -> Dict:
             "description": "Best quality, slowest",
             "size": "~3GB",
             "size_bytes": 3000 * 1024 * 1024
+        },
+        {
+            "code": "turbo",
+            "name": "Turbo",
+            "description": "Optimized for speed and accuracy",
+            "size": "~3GB",
+            "size_bytes": 3000 * 1024 * 1024
         }
     ]
 

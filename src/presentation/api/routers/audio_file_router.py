@@ -26,7 +26,7 @@ router = APIRouter()
 )
 async def retranscribe_audio(
     audio_file_id: str,
-    model: str = Query(..., pattern="^(tiny|base|small|medium|large)$", description="Whisper model to use"),
+    model: str = Query(..., pattern="^(tiny|base|small|medium|large|turbo)$", description="Whisper model to use: tiny, base, small, medium, large, turbo"),
     language: Optional[str] = Query(None, max_length=10, description="Optional language code (e.g., 'en', 'es')"),
     use_case: RetranscribeAudioUseCase = Depends(get_retranscribe_audio_use_case)
 ):

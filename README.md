@@ -37,12 +37,15 @@ A professional voice-to-text transcription system using OpenAI Whisper, built wi
 - **File Upload**: Drag & drop audio file upload with preview
 - **Editable Transcriptions**: Edit transcription text directly in the UI
 - **Audio Playback**: Play original audio with play/stop controls
-- **Model Selection**: Choose from 5 Whisper models (tiny, base, small, medium, large)
+- **Model Selection**: Choose from 6 Whisper models (tiny, base, small, medium, large, turbo)
+- **Smart Model Ordering**: Transcriptions automatically sorted by model size (smallest to largest)
+- **Intelligent Re-transcription**: Only shows unused models in dropdown, preventing duplicates
+- **Audio File Metadata**: View audio file ID, original filename, and upload date in detail view
 - **Real-time Download Progress**: Visual progress bar when downloading new models
 - **Model Name Display**: See which model was used for each transcription
 - **Delete Functionality**: Remove transcriptions and associated audio files
 - **Custom Popups**: Professional modal dialogs for confirmations and alerts
-- **Copyright Footer**: Footer with repository links on all pages
+- **WER Tool Integration**: Quick access to Word Error Rate comparison tool from footer
 - **Dark Mode UI**: Modern, clean interface with dark theme
 
 ## Architecture
@@ -131,7 +134,7 @@ brew install ffmpeg
 python scripts/download_whisper_model.py base
 ```
 
-Available models: `tiny`, `base`, `small`, `medium`, `large`
+Available models: `tiny`, `base`, `small`, `medium`, `large`, `turbo`
 
 ### 7. Install Frontend Dependencies
 
@@ -217,7 +220,7 @@ Content-Type: multipart/form-data
 Parameters:
 - file: Audio file (required)
 - language: Language code (optional, e.g., 'en', 'es')
-- model: Whisper model (optional, default: 'base', options: tiny/base/small/medium/large)
+- model: Whisper model (optional, default: 'base', options: tiny/base/small/medium/large/turbo)
 
 Response:
 {
@@ -273,7 +276,7 @@ POST /api/v1/audio-files/{audio_file_id}/transcriptions?model={model}&language={
 
 Parameters:
 - audio_file_id: ID of the existing audio file (required, path parameter)
-- model: Whisper model (required, query parameter, options: tiny/base/small/medium/large)
+- model: Whisper model (required, query parameter, options: tiny/base/small/medium/large/turbo)
 - language: Language code (optional, query parameter, e.g., 'en', 'es')
 
 Response:
@@ -471,6 +474,7 @@ Whisper/
 - **small**: Better accuracy (~2GB RAM)
 - **medium**: High accuracy (~5GB RAM)
 - **large**: Best accuracy (~10GB RAM)
+- **turbo**: Optimized for speed and accuracy (~5GB RAM)
 
 ### Environment Variables
 
@@ -504,7 +508,7 @@ The `scripts/` directory contains helpful utilities:
 | Script | Description |
 |--------|-------------|
 | `init_db.py` | Initialize the SQLite database and create tables |
-| `download_whisper_model.py` | Download a specific Whisper model (tiny/base/small/medium/large) |
+| `download_whisper_model.py` | Download a specific Whisper model (tiny/base/small/medium/large/turbo) |
 
 ### Usage Examples
 

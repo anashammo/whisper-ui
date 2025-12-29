@@ -1,10 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TranscriptionService } from '../../core/services/transcription.service';
 import { Transcription, TranscriptionStatus } from '../../core/models/transcription.model';
 import { PopupService } from '../../shared/services/popup.service';
+import { ApiService } from '../../core/services/api.service';
 
 /**
  * Transcription detail component
@@ -27,8 +28,14 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   // Re-transcription modal state
   showRetranscribeDialog: boolean = false;
   selectedModel: string = 'base';
-  availableModels: string[] = ['tiny', 'base', 'small', 'medium', 'large'];
+  availableModels: string[] = ['tiny', 'base', 'small', 'medium', 'large', 'turbo'];
   isRetranscribing: boolean = false;
+
+  // Model download progress
+  isDownloadingModel: boolean = false;
+  downloadProgress: number = 0;
+  downloadStatus: string = '';
+  progressEventSource: EventSource | null = null;
 
   // Model information
   modelInfo: { [key: string]: { name: string; description: string; params: string; speed: string } } = {
@@ -61,6 +68,12 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       description: 'Best accuracy available, recommended for critical transcriptions',
       params: '1550M parameters',
       speed: 'Very Slow'
+    },
+    'turbo': {
+      name: 'Turbo',
+      description: 'Optimized for speed and accuracy, excellent performance',
+      params: '809M parameters',
+      speed: 'Fast'
     }
   };
 
@@ -71,7 +84,9 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     public transcriptionService: TranscriptionService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private apiService: ApiService,
+    private ngZone: NgZone
   ) {}
 
   ngOnInit(): void {
@@ -90,16 +105,22 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       .getCurrentTranscription()
       .pipe(takeUntil(this.destroy$))
       .subscribe((transcription) => {
+        console.log('[TranscriptionComponent] Transcription updated:', transcription);
         this.transcription = transcription;
 
-        // When initial transcription loads, load all transcriptions for this audio file
-        if (transcription && this.allTranscriptions.length === 0) {
-          this.loadAllTranscriptions(transcription.audio_file_id);
-        }
+        // Always load all transcriptions for this audio file when transcription changes
+        if (transcription) {
+          // Check if we need to reload (different audio file or first load)
+          const currentAudioFileId = this.allTranscriptions[0]?.audio_file_id;
+          if (!currentAudioFileId || currentAudioFileId !== transcription.audio_file_id || this.allTranscriptions.length === 0) {
+            console.log('[TranscriptionComponent] Loading all transcriptions for audio file:', transcription.audio_file_id);
+            this.loadAllTranscriptions(transcription.audio_file_id);
+          }
 
-        // Set as active transcription if not already set
-        if (transcription && !this.activeTranscription) {
-          this.activeTranscription = transcription;
+          // Set as active transcription if not already set or if it's a different transcription
+          if (!this.activeTranscription || this.activeTranscription.id !== transcription.id) {
+            this.activeTranscription = transcription;
+          }
         }
       });
 
@@ -128,6 +149,9 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       this.currentAudio.pause();
       this.currentAudio = null;
     }
+
+    // Close progress stream
+    this.closeProgressStream();
 
     this.destroy$.next();
     this.destroy$.complete();
@@ -240,16 +264,52 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Load all transcriptions for an audio file
+   * Get model size order for sorting (smaller to larger)
    */
-  private loadAllTranscriptions(audioFileId: string): void {
+  private getModelSizeOrder(model: string | null): number {
+    const modelOrder: { [key: string]: number } = {
+      'tiny': 0,
+      'base': 1,
+      'small': 2,
+      'medium': 3,
+      'large': 4,
+      'turbo': 5
+    };
+    return model ? (modelOrder[model] ?? 999) : 999;
+  }
+
+  /**
+   * Load all transcriptions for an audio file
+   * @param audioFileId - The audio file ID
+   * @param switchToId - Optional: ID of transcription to switch to after loading
+   */
+  private loadAllTranscriptions(audioFileId: string, switchToId?: string): void {
+    console.log('[TranscriptionComponent] loadAllTranscriptions - Loading for audio file:', audioFileId);
     this.transcriptionService.loadAudioFileTranscriptions(audioFileId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (transcriptions) => {
-          this.allTranscriptions = transcriptions;
-          // Update active transcription to match current transcription in the list
-          if (this.transcription) {
+          console.log('[TranscriptionComponent] Loaded transcriptions:', transcriptions);
+          // Sort transcriptions by model size (smaller to larger)
+          this.allTranscriptions = transcriptions.sort((a, b) =>
+            this.getModelSizeOrder(a.model) - this.getModelSizeOrder(b.model)
+          );
+          console.log('[TranscriptionComponent] After sorting:', this.allTranscriptions.map(t => t.model));
+          console.log('[TranscriptionComponent] Total transcriptions:', this.allTranscriptions.length);
+
+          // If we need to switch to a specific transcription after loading
+          if (switchToId) {
+            const targetTranscription = this.allTranscriptions.find(t => t.id === switchToId);
+            if (targetTranscription) {
+              this.activeTranscription = targetTranscription;
+              // Update URL to reflect the active transcription
+              const url = this.router.createUrlTree(['/transcription', targetTranscription.id]).toString();
+              window.history.replaceState({}, '', url);
+              console.log('[TranscriptionComponent] Switched to new transcription and updated URL');
+            }
+          }
+          // Otherwise, update active transcription to match current transcription in the list
+          else if (this.transcription) {
             const current = transcriptions.find(t => t.id === this.transcription!.id);
             if (current) {
               this.activeTranscription = current;
@@ -257,7 +317,7 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
           }
         },
         error: (err) => {
-          console.error('Failed to load all transcriptions:', err);
+          console.error('[TranscriptionComponent] Failed to load all transcriptions:', err);
           // Still keep the single transcription if loading all fails
         }
       });
@@ -293,6 +353,99 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     this.selectedModel = unused || 'base';
 
     this.showRetranscribeDialog = true;
+
+    // Check if the default selected model needs to be downloaded
+    this.checkModelStatus(this.selectedModel);
+  }
+
+  /**
+   * Called when user selects a different model in the re-transcription dialog
+   */
+  onModelChange(): void {
+    console.log('[TranscriptionComponent] Model changed to:', this.selectedModel);
+    this.checkModelStatus(this.selectedModel);
+  }
+
+  /**
+   * Check if model is cached and start progress tracking if downloading
+   */
+  checkModelStatus(modelName: string): void {
+    this.apiService.getModelStatus(modelName).subscribe({
+      next: (status) => {
+        console.log('[TranscriptionComponent] Model status:', status);
+
+        if (status.is_cached || status.is_loaded) {
+          console.log('[TranscriptionComponent] Model is cached/loaded');
+          this.isDownloadingModel = false;
+          this.closeProgressStream();
+        } else if (status.download_progress) {
+          console.log('[TranscriptionComponent] Model is downloading, subscribing to progress...');
+          this.streamDownloadProgress(modelName);
+        } else {
+          console.log('[TranscriptionComponent] Model not cached, will download on transcription');
+          this.isDownloadingModel = false;
+        }
+      },
+      error: (err) => {
+        console.error('[TranscriptionComponent] Error checking model status:', err);
+      }
+    });
+  }
+
+  /**
+   * Stream download progress using Server-Sent Events (SSE)
+   */
+  streamDownloadProgress(modelName: string): void {
+    // Close any existing stream
+    this.closeProgressStream();
+
+    const url = this.apiService.getModelProgressUrl(modelName);
+    console.log('[TranscriptionComponent] Subscribing to SSE:', url);
+
+    this.progressEventSource = new EventSource(url);
+    this.isDownloadingModel = true;
+    this.downloadProgress = 0;
+
+    this.progressEventSource.onmessage = (event) => {
+      this.ngZone.run(() => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('[TranscriptionComponent] Progress update:', data);
+
+          if (data.status === 'done' || data.status === 'completed' || data.status === 'cached') {
+            this.isDownloadingModel = false;
+            this.downloadProgress = 100;
+            this.closeProgressStream();
+          } else if (data.status === 'error') {
+            this.isDownloadingModel = false;
+            this.closeProgressStream();
+          } else {
+            this.downloadProgress = data.progress || 0;
+            this.downloadStatus = data.status || '';
+          }
+        } catch (e) {
+          console.error('[TranscriptionComponent] Error parsing SSE data:', e);
+        }
+      });
+    };
+
+    this.progressEventSource.onerror = (error) => {
+      console.error('[TranscriptionComponent] SSE error:', error);
+      this.ngZone.run(() => {
+        this.isDownloadingModel = false;
+        this.closeProgressStream();
+      });
+    };
+  }
+
+  /**
+   * Close SSE progress stream
+   */
+  closeProgressStream(): void {
+    if (this.progressEventSource) {
+      this.progressEventSource.close();
+      this.progressEventSource = null;
+    }
   }
 
   /**
@@ -337,11 +490,11 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     .subscribe({
       next: (newTranscription) => {
         console.log('[TranscriptionComponent] Re-transcription created:', newTranscription.id, newTranscription.model);
-        // Add to all transcriptions list
-        this.allTranscriptions.push(newTranscription);
-        console.log('[TranscriptionComponent] Total transcriptions now:', this.allTranscriptions.length);
-        // Switch to new transcription tab
-        this.switchTranscription(newTranscription);
+
+        // Reload all transcriptions and switch to the new one after loading completes
+        // This ensures proper sorting and that we're switching to the correct reference
+        this.loadAllTranscriptions(this.activeTranscription!.audio_file_id, newTranscription.id);
+
         // Close dialog
         this.closeRetranscribeDialog();
 
@@ -351,7 +504,25 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('[TranscriptionComponent] Re-transcription failed:', err);
-        const errorMessage = err.error?.detail || 'Failed to start re-transcription';
+
+        // Extract error message from various possible formats
+        let errorMessage = 'Failed to start re-transcription';
+        if (err.error) {
+          if (typeof err.error === 'string') {
+            errorMessage = err.error;
+          } else if (err.error.detail) {
+            errorMessage = typeof err.error.detail === 'string'
+              ? err.error.detail
+              : JSON.stringify(err.error.detail);
+          } else if (err.error.message) {
+            errorMessage = err.error.message;
+          }
+        } else if (err.message) {
+          errorMessage = err.message;
+        } else if (err.statusText) {
+          errorMessage = err.statusText;
+        }
+
         this.error = errorMessage;
         this.isRetranscribing = false;
 

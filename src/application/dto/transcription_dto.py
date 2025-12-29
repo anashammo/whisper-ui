@@ -23,6 +23,7 @@ class TranscriptionDTO:
     error_message: Optional[str] = None
     model: Optional[str] = None
     audio_file_original_filename: Optional[str] = None  # Denormalized for convenience
+    audio_file_uploaded_at: Optional[datetime] = None  # Denormalized for convenience
 
     @classmethod
     def from_entity(cls, transcription):
