@@ -5,6 +5,9 @@ A professional voice-to-text transcription system using OpenAI Whisper, built wi
 ## Recent Updates
 
 **Latest Features (December 2025):**
+- ✨ **LLM Enhancement**: Enhance transcriptions with local LLM (Ollama/LM Studio) for grammar correction, formatting, and filler word removal
+- 🤖 **Dual Text Display**: View original Whisper transcription and LLM-enhanced version side-by-side
+- 🧠 **LangGraph Integration**: Intelligent transcription enhancement using LangGraph workflow framework
 - 🎭 **Multiple Model Transcriptions**: Transcribe the same audio file with different Whisper models and compare results
 - 📂 **Grouped History View**: Audio files grouped with expandable sections showing all transcriptions per file
 - 🔄 **Re-transcription Support**: Re-transcribe existing audio files with different models without re-uploading
@@ -22,6 +25,7 @@ A professional voice-to-text transcription system using OpenAI Whisper, built wi
 
 ### Core Features
 - **GPU-Accelerated Transcription**: Uses CUDA for fast audio transcription with NVIDIA RTX GPUs
+- **LLM Enhancement**: Enhance transcriptions with local LLM (Ollama/LM Studio) for grammar, formatting, and filler removal
 - **Clean Architecture**: Domain-driven design with clear separation of concerns
 - **REST API**: FastAPI with automatic OpenAPI documentation
 - **Multiple Audio Formats**: Supports MP3, WAV, M4A, FLAC, OGG, WEBM
@@ -29,6 +33,9 @@ A professional voice-to-text transcription system using OpenAI Whisper, built wi
 - **On-Premises Deployment**: All data stored locally, no cloud dependencies
 
 ### Frontend Features
+- **LLM Enhancement**: Opt-in LLM enhancement during upload/recording/re-transcription with manual enhance button
+- **Dual Text Areas**: Side-by-side view of original Whisper and LLM-enhanced transcriptions
+- **LLM Processing Tracking**: Real-time status and processing time display for LLM enhancements
 - **Multiple Model Transcriptions**: Transcribe the same audio file with different models and compare results
 - **Grouped History View**: Audio files grouped with expandable sections showing all transcriptions
 - **Model Tabs**: Switch between different model transcriptions with tabbed interface
@@ -155,8 +162,38 @@ Edit `.env` to configure:
 - `WHISPER_DEVICE`: cuda or cpu (default: cuda)
 - `MAX_FILE_SIZE_MB`: Maximum upload size (default: 25)
 - `CORS_ORIGINS`: Allowed origins for CORS
+- `LLM_BASE_URL`: Base URL for local LLM API (default: http://localhost:11434/v1)
+- `LLM_MODEL`: LLM model name (default: llama3)
+- `LLM_TIMEOUT_SECONDS`: Timeout for LLM requests (default: 60)
+- `LLM_TEMPERATURE`: LLM temperature 0.0-1.0 (default: 0.3)
 
-### 9. Initialize Database
+### 9. Setup LLM Enhancement (Optional)
+
+To enable transcription enhancement with local LLM:
+
+**Option 1: Using Ollama (Recommended)**
+
+1. Install Ollama from https://ollama.ai
+2. Pull a model:
+   ```bash
+   ollama pull llama3
+   ```
+3. The server runs on http://localhost:11434 by default
+
+**Option 2: Using LM Studio**
+
+1. Install LM Studio from https://lmstudio.ai
+2. Download a model from the UI
+3. Start the local server (default: http://localhost:1234/v1)
+4. Update `.env`: `LLM_BASE_URL=http://localhost:1234/v1`
+
+The LLM enhancement feature provides:
+- Grammar and punctuation correction
+- Formatting and structure improvements
+- Filler word removal (um, uh, like, etc.)
+- Preserves original meaning and technical terms
+
+### 10. Initialize Database
 
 ```bash
 python scripts/setup/init_db.py
@@ -221,6 +258,7 @@ Parameters:
 - file: Audio file (required)
 - language: Language code (optional, e.g., 'en', 'es')
 - model: Whisper model (optional, default: 'base', options: tiny/base/small/medium/large/turbo)
+- enable_llm_enhancement: Boolean (optional, default: false) - Enable LLM enhancement
 
 Response:
 {
@@ -232,7 +270,35 @@ Response:
   "model": "base",
   "duration_seconds": 45.3,
   "created_at": "2025-12-28T10:30:00Z",
-  "completed_at": "2025-12-28T10:30:15Z"
+  "completed_at": "2025-12-28T10:30:15Z",
+  "enable_llm_enhancement": false,
+  "enhanced_text": null,
+  "llm_processing_time_seconds": null,
+  "llm_enhancement_status": null,
+  "llm_error_message": null
+}
+```
+
+#### Enhance Transcription with LLM
+```http
+POST /api/v1/transcriptions/{transcription_id}/enhance
+
+Response:
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "audio_file_id": "660e8400-e29b-41d4-a716-446655440001",
+  "text": "Transcribed text here...",
+  "enhanced_text": "Enhanced transcribed text with proper grammar and formatting.",
+  "status": "completed",
+  "language": "en",
+  "model": "base",
+  "duration_seconds": 45.3,
+  "created_at": "2025-12-28T10:30:00Z",
+  "completed_at": "2025-12-28T10:30:15Z",
+  "enable_llm_enhancement": true,
+  "llm_processing_time_seconds": 2.35,
+  "llm_enhancement_status": "completed",
+  "llm_error_message": null
 }
 ```
 
@@ -639,3 +705,5 @@ This project is for educational and internal use.
 ## Support
 
 For issues or questions, please refer to the project documentation or create an issue in the repository.
+
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/anashammo/whisper-ui?utm_source=oss&utm_medium=github&utm_campaign=anashammo%2Fwhisper-ui&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)

@@ -57,6 +57,24 @@ class Settings(BaseSettings):
     # Logging Configuration
     log_level: str = Field(default="INFO", description="Logging level")
 
+    # LLM Configuration
+    llm_base_url: str = Field(
+        default="http://localhost:11434/v1",
+        description="Base URL for LLM API (OpenAI-compatible, e.g., Ollama)"
+    )
+    llm_model: str = Field(
+        default="llama3",
+        description="LLM model name (e.g., llama3, mistral, etc.)"
+    )
+    llm_timeout_seconds: int = Field(
+        default=60,
+        description="Timeout for LLM requests in seconds"
+    )
+    llm_temperature: float = Field(
+        default=0.3,
+        description="LLM temperature for generation (0.0-1.0, lower = more focused)"
+    )
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

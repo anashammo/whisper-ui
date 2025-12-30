@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from ...infrastructure.config.settings import Settings, get_settings
 from ...infrastructure.persistence.database import get_db
 from ...infrastructure.services.whisper_service import WhisperService
+from ...infrastructure.services.llm_enhancement_service_impl import LLMEnhancementServiceImpl
 from ...infrastructure.storage.local_file_storage import LocalFileStorage
 from ...infrastructure.persistence.repositories.sqlite_transcription_repository import SQLiteTranscriptionRepository
 from ...infrastructure.persistence.repositories.sqlite_audio_file_repository import SQLiteAudioFileRepository
@@ -16,6 +17,7 @@ from ...application.use_cases.delete_transcription_use_case import DeleteTranscr
 from ...application.use_cases.retranscribe_audio_use_case import RetranscribeAudioUseCase
 from ...application.use_cases.get_audio_file_transcriptions_use_case import GetAudioFileTranscriptionsUseCase
 from ...application.use_cases.delete_audio_file_use_case import DeleteAudioFileUseCase
+from ...application.use_cases.enhance_transcription_use_case import EnhanceTranscriptionUseCase
 
 
 # Singleton services (loaded once and reused)
@@ -46,11 +48,32 @@ def get_file_storage() -> LocalFileStorage:
     return LocalFileStorage(settings)
 
 
+@lru_cache()
+def get_llm_enhancement_service() -> LLMEnhancementServiceImpl:
+    """
+    Get LLM enhancement service singleton.
+
+    LLM client is initialized once and reused across requests
+    for performance.
+
+    Returns:
+        LLMEnhancementServiceImpl instance
+    """
+    settings = get_settings()
+    return LLMEnhancementServiceImpl(
+        base_url=settings.llm_base_url,
+        model=settings.llm_model,
+        timeout=settings.llm_timeout_seconds,
+        temperature=settings.llm_temperature
+    )
+
+
 # Use case factory functions with dependency injection
 def get_transcribe_audio_use_case(
     db: Session = Depends(get_db),
     whisper_service: WhisperService = Depends(get_whisper_service),
     file_storage: LocalFileStorage = Depends(get_file_storage),
+    llm_service: LLMEnhancementServiceImpl = Depends(get_llm_enhancement_service),
     settings: Settings = Depends(get_settings)
 ) -> TranscribeAudioUseCase:
     """
@@ -60,6 +83,7 @@ def get_transcribe_audio_use_case(
         db: Database session
         whisper_service: Whisper service for transcription
         file_storage: File storage service
+        llm_service: LLM enhancement service
         settings: Application settings
 
     Returns:
@@ -73,6 +97,7 @@ def get_transcribe_audio_use_case(
         audio_file_repository=audio_file_repo,
         speech_recognition_service=whisper_service,
         file_storage=file_storage,
+        llm_enhancement_service=llm_service,
         max_file_size_mb=settings.max_file_size_mb,
         max_duration_seconds=settings.max_duration_seconds
     )
@@ -138,7 +163,8 @@ def get_delete_transcription_use_case(
 
 def get_retranscribe_audio_use_case(
     db: Session = Depends(get_db),
-    whisper_service: WhisperService = Depends(get_whisper_service)
+    whisper_service: WhisperService = Depends(get_whisper_service),
+    llm_service: LLMEnhancementServiceImpl = Depends(get_llm_enhancement_service)
 ) -> RetranscribeAudioUseCase:
     """
     Create RetranscribeAudioUseCase with dependencies injected.
@@ -146,6 +172,7 @@ def get_retranscribe_audio_use_case(
     Args:
         db: Database session
         whisper_service: Whisper service for transcription
+        llm_service: LLM enhancement service
 
     Returns:
         RetranscribeAudioUseCase instance
@@ -156,7 +183,8 @@ def get_retranscribe_audio_use_case(
     return RetranscribeAudioUseCase(
         transcription_repository=transcription_repo,
         audio_file_repository=audio_file_repo,
-        speech_recognition_service=whisper_service
+        speech_recognition_service=whisper_service,
+        llm_enhancement_service=llm_service
     )
 
 
@@ -203,3 +231,21 @@ def get_delete_audio_file_use_case(
         transcription_repository=transcription_repo,
         file_storage=file_storage
     )
+
+
+def get_enhance_transcription_use_case(
+    db: Session = Depends(get_db),
+    llm_service: LLMEnhancementServiceImpl = Depends(get_llm_enhancement_service)
+) -> EnhanceTranscriptionUseCase:
+    """
+    Create EnhanceTranscriptionUseCase with dependencies injected.
+
+    Args:
+        db: Database session
+        llm_service: LLM enhancement service
+
+    Returns:
+        EnhanceTranscriptionUseCase instance
+    """
+    transcription_repo = SQLiteTranscriptionRepository(db)
+    return EnhanceTranscriptionUseCase(transcription_repo, llm_service)

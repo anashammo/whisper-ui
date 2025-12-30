@@ -46,7 +46,13 @@ class SQLiteTranscriptionRepository(TranscriptionRepository):
             completed_at=model.completed_at,
             error_message=model.error_message,
             model=model.model,
-            processing_time_seconds=model.processing_time_seconds
+            processing_time_seconds=model.processing_time_seconds,
+            # LLM Enhancement fields
+            enable_llm_enhancement=model.enable_llm_enhancement,
+            enhanced_text=model.enhanced_text,
+            llm_processing_time_seconds=model.llm_processing_time_seconds,
+            llm_enhancement_status=model.llm_enhancement_status,
+            llm_error_message=model.llm_error_message
         )
 
     def _to_model(self, entity: Transcription) -> TranscriptionModel:
@@ -70,7 +76,13 @@ class SQLiteTranscriptionRepository(TranscriptionRepository):
             completed_at=entity.completed_at,
             error_message=entity.error_message,
             model=entity.model,
-            processing_time_seconds=entity.processing_time_seconds
+            processing_time_seconds=entity.processing_time_seconds,
+            # LLM Enhancement fields
+            enable_llm_enhancement=entity.enable_llm_enhancement,
+            enhanced_text=entity.enhanced_text,
+            llm_processing_time_seconds=entity.llm_processing_time_seconds,
+            llm_enhancement_status=entity.llm_enhancement_status,
+            llm_error_message=entity.llm_error_message
         )
 
     async def create(self, transcription: Transcription) -> Transcription:
@@ -129,6 +141,12 @@ class SQLiteTranscriptionRepository(TranscriptionRepository):
             model.completed_at = transcription.completed_at
             model.error_message = transcription.error_message
             model.processing_time_seconds = transcription.processing_time_seconds
+            # LLM Enhancement fields
+            model.enable_llm_enhancement = transcription.enable_llm_enhancement
+            model.enhanced_text = transcription.enhanced_text
+            model.llm_processing_time_seconds = transcription.llm_processing_time_seconds
+            model.llm_enhancement_status = transcription.llm_enhancement_status
+            model.llm_error_message = transcription.llm_error_message
 
             self.db.commit()
             self.db.refresh(model)

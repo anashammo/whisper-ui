@@ -30,6 +30,10 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   selectedModel: string = 'base';
   availableModels: string[] = ['tiny', 'base', 'small', 'medium', 'large', 'turbo'];
   isRetranscribing: boolean = false;
+  enableLlmEnhancement: boolean = false;
+
+  // LLM Enhancement state
+  isEnhancing: boolean = false;
 
   // Model download progress
   isDownloadingModel: boolean = false;
@@ -235,6 +239,37 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Download audio file for current transcription
+   * Creates a temporary anchor element to trigger browser download
+   */
+  downloadAudio(): void {
+    if (!this.transcription) {
+      console.error('No transcription available for download');
+      return;
+    }
+
+    try {
+      // Get download URL with download=true parameter
+      const downloadUrl = this.transcriptionService.getAudioDownloadUrl(this.transcription.id);
+
+      // Create temporary anchor element
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.style.display = 'none';
+
+      // Append to body, click, then remove
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+
+      console.log(`Initiated download for transcription ${this.transcription.id}`);
+    } catch (err) {
+      console.error('Download failed:', err);
+      this.error = 'Failed to download audio file';
+    }
+  }
+
+  /**
    * Copy transcription text to clipboard
    */
   copyToClipboard(): void {
@@ -242,6 +277,20 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       navigator.clipboard.writeText(this.activeTranscription.text).then(() => {
         // Use custom success popup instead of browser alert
         this.popupService.success('Transcription copied to clipboard!')
+          .pipe(takeUntil(this.destroy$))
+          .subscribe();
+      });
+    }
+  }
+
+  /**
+   * Copy enhanced transcription text to clipboard
+   */
+  copyEnhancedToClipboard(): void {
+    if (this.activeTranscription?.enhanced_text) {
+      navigator.clipboard.writeText(this.activeTranscription.enhanced_text).then(() => {
+        // Use custom success popup instead of browser alert
+        this.popupService.success('Enhanced transcription copied to clipboard!')
           .pipe(takeUntil(this.destroy$))
           .subscribe();
       });
@@ -485,7 +534,8 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     this.transcriptionService.retranscribeAudio(
       this.activeTranscription.audio_file_id,
       this.selectedModel,
-      this.activeTranscription.language || undefined
+      this.activeTranscription.language || undefined,
+      this.enableLlmEnhancement
     ).pipe(takeUntil(this.destroy$))
     .subscribe({
       next: (newTranscription) => {
@@ -583,5 +633,71 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
    */
   formatProcessingTime(seconds: number): string {
     return `${seconds.toFixed(2)}s`;
+  }
+
+  /**
+   * Check if the active transcription can be enhanced with LLM
+   */
+  canEnhance(): boolean {
+    if (!this.activeTranscription) {
+      return false;
+    }
+
+    return (
+      this.activeTranscription.enable_llm_enhancement &&
+      this.activeTranscription.status === TranscriptionStatus.COMPLETED &&
+      this.activeTranscription.text !== null &&
+      this.activeTranscription.text.trim() !== '' &&
+      this.activeTranscription.text !== '(No speech detected)' &&
+      (this.activeTranscription.llm_enhancement_status === null ||
+       this.activeTranscription.llm_enhancement_status === 'failed')
+    );
+  }
+
+  /**
+   * Enhance the active transcription with LLM
+   */
+  enhanceTranscription(): void {
+    if (!this.activeTranscription || !this.canEnhance()) {
+      return;
+    }
+
+    this.isEnhancing = true;
+    this.error = null;
+
+    this.transcriptionService.enhanceTranscription(this.activeTranscription.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (enhancedTranscription) => {
+          console.log('[TranscriptionComponent] Enhancement completed:', enhancedTranscription);
+          this.isEnhancing = false;
+
+          // Update the active transcription and reload all transcriptions
+          this.activeTranscription = enhancedTranscription;
+          if (enhancedTranscription.audio_file_id) {
+            this.loadAllTranscriptions(enhancedTranscription.audio_file_id);
+          }
+
+          this.popupService.success('Transcription enhanced successfully!')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe();
+        },
+        error: (err) => {
+          console.error('[TranscriptionComponent] Enhancement failed:', err);
+          this.isEnhancing = false;
+
+          let errorMessage = 'Failed to enhance transcription';
+          if (err.error?.detail) {
+            errorMessage = typeof err.error.detail === 'string'
+              ? err.error.detail
+              : JSON.stringify(err.error.detail);
+          }
+
+          this.error = errorMessage;
+          this.popupService.error(errorMessage)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe();
+        }
+      });
   }
 }

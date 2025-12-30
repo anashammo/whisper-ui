@@ -134,6 +134,14 @@
       <span class="model-status needs-download" *ngIf="downloadStatus === 'needs_download'">⬇️ Will download</span>
     </div>
 
+    <!-- LLM Enhancement Checkbox for recorded audio -->
+    <div class="llm-enhancement-checkbox">
+      <label>
+        <input type="checkbox" [(ngModel)]="enableLlmEnhancement" />
+        Enhance with LLM (grammar, formatting, filler removal)
+      </label>
+    </div>
+
     <!-- Upload Button -->
     <button class="btn btn-success btn-upload" (click)="uploadFile()">
       Start Transcription
@@ -181,6 +189,14 @@
       </select>
       <span class="model-status" *ngIf="downloadStatus === 'cached'">✓ Cached</span>
       <span class="model-status needs-download" *ngIf="downloadStatus === 'needs_download'">⬇️ Will download</span>
+    </div>
+
+    <!-- LLM Enhancement Checkbox -->
+    <div class="llm-enhancement-checkbox">
+      <label>
+        <input type="checkbox" [(ngModel)]="enableLlmEnhancement" />
+        Enhance with LLM (grammar, formatting, filler removal)
+      </label>
     </div>
 
     <!-- Upload Button -->

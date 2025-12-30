@@ -17,11 +17,11 @@ def stop_all(force=False):
 
     # Stop backend
     print("\n1. Stopping Backend Server:")
-    backend_result = subprocess.run([sys.executable, "scripts/stop_backend.py"] + args)
+    backend_result = subprocess.run([sys.executable, "scripts/server/stop_backend.py"] + args)
 
     # Stop frontend
     print("\n2. Stopping Frontend Server:")
-    frontend_result = subprocess.run([sys.executable, "scripts/stop_frontend.py"] + args)
+    frontend_result = subprocess.run([sys.executable, "scripts/server/stop_frontend.py"] + args)
 
     print("\n" + "=" * 60)
     if backend_result.returncode == 0 or frontend_result.returncode == 0:

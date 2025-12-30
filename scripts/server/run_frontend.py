@@ -10,8 +10,10 @@ def run_frontend():
     print("=" * 50)
 
     # Change to frontend directory
+    # Get project root: scripts/server/ -> scripts/ -> project root
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     frontend_dir = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        project_root,
         "src", "presentation", "frontend"
     )
 

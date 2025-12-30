@@ -16,7 +16,8 @@ def check_port_in_use(port):
 def clear_python_cache():
     """Clear Python __pycache__ directories"""
     try:
-        project_root = Path(__file__).parent.parent
+        # Path(__file__).parent = scripts/server/, .parent.parent = scripts/, .parent.parent.parent = project root
+        project_root = Path(__file__).parent.parent.parent
         print("Clearing Python cache...")
 
         # Use PowerShell to remove all __pycache__ directories

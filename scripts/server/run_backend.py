@@ -11,7 +11,8 @@ def run_backend():
     print("=" * 50)
 
     # Get the project root directory
-    project_root = Path(__file__).parent.parent
+    # Path(__file__).parent = scripts/server/, .parent.parent = scripts/, .parent.parent.parent = project root
+    project_root = Path(__file__).parent.parent.parent
 
     print(f"\nProject root: {project_root}")
     print("Server: http://0.0.0.0:8001")

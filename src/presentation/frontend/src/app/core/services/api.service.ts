@@ -18,7 +18,7 @@ export class ApiService {
   /**
    * Upload and transcribe an audio file
    */
-  uploadAudio(file: File, language?: string, model?: string): Observable<Transcription> {
+  uploadAudio(file: File, language?: string, model?: string, enableLlmEnhancement?: boolean): Observable<Transcription> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -28,6 +28,9 @@ export class ApiService {
     }
     if (model) {
       params = params.set('model', model);
+    }
+    if (enableLlmEnhancement !== undefined) {
+      params = params.set('enable_llm_enhancement', enableLlmEnhancement.toString());
     }
 
     return this.http.post<Transcription>(
@@ -63,16 +66,29 @@ export class ApiService {
   /**
    * Re-transcribe an existing audio file with a different model
    */
-  retranscribeAudio(audioFileId: string, model: string, language?: string): Observable<Transcription> {
+  retranscribeAudio(audioFileId: string, model: string, language?: string, enableLlmEnhancement?: boolean): Observable<Transcription> {
     let params = new HttpParams().set('model', model);
     if (language) {
       params = params.set('language', language);
+    }
+    if (enableLlmEnhancement !== undefined) {
+      params = params.set('enable_llm_enhancement', enableLlmEnhancement.toString());
     }
 
     return this.http.post<Transcription>(
       `${this.apiUrl}/audio-files/${audioFileId}/transcriptions`,
       null,
       { params }
+    );
+  }
+
+  /**
+   * Enhance transcription with LLM
+   */
+  enhanceTranscription(transcriptionId: string): Observable<Transcription> {
+    return this.http.post<Transcription>(
+      `${this.apiUrl}/transcriptions/${transcriptionId}/enhance`,
+      null
     );
   }
 
@@ -124,6 +140,14 @@ export class ApiService {
    */
   getAudioUrl(id: string): string {
     return `${this.apiUrl}/transcriptions/${id}/audio`;
+  }
+
+  /**
+   * Get audio file download URL with download parameter
+   * This triggers browser download instead of inline playback
+   */
+  getAudioDownloadUrl(id: string): string {
+    return `${this.apiUrl}/transcriptions/${id}/audio?download=true`;
   }
 
   /**

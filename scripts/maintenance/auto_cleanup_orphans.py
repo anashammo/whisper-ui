@@ -32,7 +32,11 @@ try:
     if orphaned:
         print('\nOrphaned transcriptions:')
         for trans in orphaned:
-            print(f'  - ID: {trans.id[:8]}... | Audio File ID: {trans.audio_file_id[:8]}... | Model: {trans.model} | Status: {trans.status.value}')
+            info = f'  - ID: {trans.id[:8]}... | Audio File ID: {trans.audio_file_id[:8]}... | Model: {trans.model} | Status: {trans.status.value}'
+            if trans.enable_llm_enhancement:
+                llm_status = trans.llm_enhancement_status or 'pending'
+                info += f' | LLM: {llm_status}'
+            print(info)
 
         print('\nDeleting orphaned transcriptions...')
         for trans in orphaned:

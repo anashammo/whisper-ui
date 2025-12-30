@@ -20,6 +20,13 @@ class TranscriptionResponse(BaseModel):
     audio_file_uploaded_at: Optional[datetime] = None
     processing_time_seconds: Optional[float] = None
 
+    # LLM Enhancement fields
+    enable_llm_enhancement: bool = False
+    enhanced_text: Optional[str] = None
+    llm_processing_time_seconds: Optional[float] = None
+    llm_enhancement_status: Optional[str] = None
+    llm_error_message: Optional[str] = None
+
     class Config:
         from_attributes = True
         json_schema_extra = {
@@ -62,7 +69,13 @@ class TranscriptionResponse(BaseModel):
             model=dto.model,
             audio_file_original_filename=dto.audio_file_original_filename,
             audio_file_uploaded_at=dto.audio_file_uploaded_at,
-            processing_time_seconds=dto.processing_time_seconds
+            processing_time_seconds=dto.processing_time_seconds,
+            # LLM Enhancement fields
+            enable_llm_enhancement=dto.enable_llm_enhancement,
+            enhanced_text=dto.enhanced_text,
+            llm_processing_time_seconds=dto.llm_processing_time_seconds,
+            llm_enhancement_status=dto.llm_enhancement_status,
+            llm_error_message=dto.llm_error_message
         )
 
 

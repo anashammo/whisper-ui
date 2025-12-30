@@ -33,6 +33,13 @@ class Transcription:
     model: Optional[str] = None
     processing_time_seconds: Optional[float] = None
 
+    # LLM Enhancement fields
+    enable_llm_enhancement: bool = False
+    enhanced_text: Optional[str] = None
+    llm_processing_time_seconds: Optional[float] = None
+    llm_enhancement_status: Optional[str] = None  # 'pending', 'processing', 'completed', 'failed'
+    llm_error_message: Optional[str] = None
+
     def mark_as_processing(self) -> None:
         """
         Business rule: can only process pending transcriptions.
@@ -121,3 +128,88 @@ class Transcription:
             TranscriptionStatus.FAILED,
             TranscriptionStatus.PENDING
         ]
+
+    def can_be_enhanced(self) -> bool:
+        """
+        Business rule: determine if transcription can be enhanced with LLM.
+
+        A transcription can be enhanced if:
+        - LLM enhancement is enabled for this transcription
+        - Transcription is completed successfully
+        - Has non-empty text
+        - Has not been enhanced yet OR enhancement failed (allow retry)
+
+        Returns:
+            bool: True if transcription can be enhanced
+        """
+        return (
+            self.enable_llm_enhancement and
+            self.status == TranscriptionStatus.COMPLETED and
+            self.text is not None and
+            self.text.strip() != "" and
+            self.text != "(No speech detected)" and
+            self.llm_enhancement_status in [None, 'failed']  # Not enhanced or failed (can retry)
+        )
+
+    def mark_llm_processing(self) -> None:
+        """
+        Business rule: mark LLM enhancement as processing.
+
+        Raises:
+            ValueError: If transcription cannot be enhanced
+        """
+        if not self.can_be_enhanced():
+            raise ValueError(
+                f"Transcription cannot be enhanced. "
+                f"enable_llm_enhancement={self.enable_llm_enhancement}, "
+                f"status={self.status.value}, "
+                f"text={'empty' if not self.text else 'present'}, "
+                f"llm_enhancement_status={self.llm_enhancement_status}"
+            )
+        self.llm_enhancement_status = 'processing'
+
+    def complete_llm_enhancement(self, enhanced_text: str, processing_time: float) -> None:
+        """
+        Business rule: complete LLM enhancement with results.
+
+        Args:
+            enhanced_text: The enhanced transcription text from LLM
+            processing_time: Time taken for LLM enhancement in seconds
+
+        Raises:
+            ValueError: If LLM enhancement is not in processing state or text is empty
+        """
+        if self.llm_enhancement_status != 'processing':
+            raise ValueError(
+                f"Cannot complete LLM enhancement in {self.llm_enhancement_status} state. "
+                f"Only 'processing' enhancements can be completed."
+            )
+
+        if not enhanced_text or not enhanced_text.strip():
+            raise ValueError("Enhanced text cannot be empty")
+
+        self.enhanced_text = enhanced_text.strip()
+        self.llm_processing_time_seconds = processing_time
+        self.llm_enhancement_status = 'completed'
+        self.llm_error_message = None
+
+    def fail_llm_enhancement(self, error_message: str) -> None:
+        """
+        Business rule: mark LLM enhancement as failed with error message.
+
+        Args:
+            error_message: Description of the failure
+
+        Raises:
+            ValueError: If error message is empty
+        """
+        if not error_message or not error_message.strip():
+            raise ValueError("Error message cannot be empty")
+
+        self.llm_enhancement_status = 'failed'
+        self.llm_error_message = error_message.strip()
+        # Keep enhanced_text as None when failed
+
+    def is_llm_enhanced(self) -> bool:
+        """Check if transcription has been enhanced with LLM successfully"""
+        return self.llm_enhancement_status == 'completed' and self.enhanced_text is not None

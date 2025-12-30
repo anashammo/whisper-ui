@@ -50,6 +50,18 @@ async def main():
             print(f"  Transcriptions:")
             for trans in transcriptions:
                 print(f"    - {trans.model or 'unknown'}: {trans.status} (ID: {trans.id})")
+                # Show LLM enhancement info if enabled
+                if trans.enable_llm_enhancement:
+                    llm_status = trans.llm_enhancement_status or 'pending'
+                    print(f"      LLM Enhancement: {llm_status}", end='')
+                    if trans.llm_processing_time_seconds:
+                        print(f' ({trans.llm_processing_time_seconds:.2f}s)', end='')
+                    if trans.enhanced_text:
+                        print(f' | Enhanced: {len(trans.enhanced_text)} chars', end='')
+                    if trans.llm_error_message:
+                        error_preview = trans.llm_error_message[:60] + ('...' if len(trans.llm_error_message) > 60 else '')
+                        print(f' | Error: {error_preview}', end='')
+                    print()
 
         print(f"\n{'='*60}")
         print("Summary:")

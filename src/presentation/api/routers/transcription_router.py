@@ -46,6 +46,10 @@ async def create_transcription(
         description="Whisper model to use: tiny, base, small, medium, large, turbo. Default is 'base'.",
         pattern=MODEL_VALIDATION_PATTERN
     ),
+    enable_llm_enhancement: bool = Query(
+        False,
+        description="Enable LLM enhancement for this transcription (grammar, formatting, filler removal)"
+    ),
     use_case: TranscribeAudioUseCase = Depends(get_transcribe_audio_use_case)
 ):
     """
@@ -67,8 +71,12 @@ async def create_transcription(
             file_size=len(content),
             mime_type=file.content_type or "application/octet-stream",
             language=language,
-            model=model or "base"
+            model=model or "base",
+            enable_llm_enhancement=enable_llm_enhancement
         )
+
+        # Debug logging
+        print(f"[DEBUG] Upload DTO: enable_llm_enhancement={upload_dto.enable_llm_enhancement}, model={upload_dto.model}")
 
         # Execute use case
         transcription_dto = await use_case.execute(upload_dto)
@@ -207,18 +215,23 @@ async def delete_transcription(
 @router.get(
     "/transcriptions/{transcription_id}/audio",
     summary="Get audio file",
-    description="Download the original audio file for a transcription."
+    description="Stream or download the original audio file for a transcription."
 )
 async def get_audio_file(
     transcription_id: str,
+    download: bool = Query(
+        False,
+        description="If true, sets Content-Disposition to attachment for download"
+    ),
     db: Session = Depends(get_db)
 ):
     """
-    Download the original audio file for a transcription.
+    Get the audio file for a specific transcription.
 
     - **transcription_id**: Unique identifier of the transcription
+    - **download**: If True, force download instead of inline playback
 
-    Returns the audio file.
+    Returns the audio file (streaming or download).
     """
     try:
         # Get transcription to find audio file ID
@@ -249,11 +262,19 @@ async def get_audio_file(
                 detail=f"Audio file does not exist on disk"
             )
 
+        # Determine Content-Disposition header
+        # If download=true, use "attachment" to force download
+        # Otherwise, use "inline" for browser playback
+        headers = {}
+        if download:
+            headers["Content-Disposition"] = f'attachment; filename="{audio_file.original_filename}"'
+
         # Return file
         return FileResponse(
             path=audio_file.file_path,
             media_type=audio_file.mime_type,
-            filename=audio_file.original_filename
+            filename=audio_file.original_filename,
+            headers=headers
         )
 
     except HTTPException:
