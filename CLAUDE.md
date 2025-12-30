@@ -11,6 +11,10 @@ A GPU-accelerated voice-to-text transcription system using OpenAI Whisper with F
 - Transcriptions can be enhanced with local LLM (Ollama/LM Studio) for grammar correction, formatting, and filler removal
 - Transcriptions are displayed ordered by model size (smallest to largest)
 - Dual text display shows original Whisper and LLM-enhanced versions side-by-side
+- Audio controls consolidated at audio file level in History view
+- Visual indicators for LLM enhancement status across all views
+- Browser download filenames auto-convert .webm to .wav for compatibility
+- Read-only transcription display prevents accidental edits
 
 ## Architecture
 
@@ -111,15 +115,18 @@ transcriptions
 - Re-transcription dropdown only shows models not yet used for that audio file
 - Audio file metadata (ID, original filename, upload date) displayed in detail view
 - Dual text areas show original Whisper and LLM-enhanced transcriptions side-by-side (when LLM enabled)
+- Read-only transcription textareas prevent accidental editing
 - "Enhance with LLM" button for completed transcriptions that opted in
 - LLM enhancement checkbox in upload/recording/re-transcription forms
+- LLM enhancement status badges in both History and Details views (color-coded: green=completed, blue=processing, red=failed, orange=pending)
+- Enhanced text preview in History view cards (when available)
 - **Audio playback and download**:
-  - History view: Play (▶️) and Download (⬇️) buttons on each transcription card
+  - History view: Play (▶️) and Download (⬇️) buttons in audio file header (consolidated, not per-transcription)
   - Details view: Play Audio and Download Audio buttons in Transcription Result section
-  - Download button triggers browser download with original filename
+  - Download button triggers browser download with filename conversion (.webm files download as .wav for universal compatibility)
   - Available for all transcription statuses (pending, processing, completed, failed)
 - **Copy functionality** in Details view:
-  - "Copy Transcription" - copies original Whisper text to clipboard
+  - "Copy Original" - copies original Whisper text to clipboard
   - "Copy Enhanced" - copies LLM-enhanced text (only visible when enhancement successful)
 - Footer includes link to WER (Word Error Rate) comparison tool
 
@@ -431,6 +438,11 @@ The audio endpoint supports both streaming (for playback) and downloading (for s
 **Query Parameters**:
 - `download` (optional, boolean, default: `false`): If `true`, forces browser download with `Content-Disposition: attachment`
 
+**Download Filename Conversion**:
+- `.webm` files automatically renamed to `.wav` in download filename (physical file unchanged)
+- Other formats (.wav, .mp3, .flac, etc.) retain original extension
+- Example: `recording-1767025956723.webm` downloads as `recording-1767025956723.wav`
+
 **Backend Implementation** (`transcription_router.py`):
 ```python
 @router.get("/transcriptions/{transcription_id}/audio")
@@ -444,7 +456,12 @@ async def get_audio_file(
     # Set Content-Disposition header for download
     headers = {}
     if download:
-        headers["Content-Disposition"] = f'attachment; filename="{audio_file.original_filename}"'
+        # Replace .webm extension with .wav for better compatibility
+        download_filename = audio_file.original_filename
+        if download_filename.lower().endswith('.webm'):
+            download_filename = download_filename[:-5] + '.wav'
+
+        headers["Content-Disposition"] = f'attachment; filename="{download_filename}"'
 
     return FileResponse(
         path=audio_file.file_path,

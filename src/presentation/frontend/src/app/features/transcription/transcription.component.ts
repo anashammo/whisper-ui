@@ -162,6 +162,46 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Get CSS class for LLM enhancement status badge
+   */
+  getLLMStatusBadgeClass(): string {
+    if (!this.activeTranscription || !this.activeTranscription.enable_llm_enhancement) {
+      return 'llm-status-badge llm-not-enabled';
+    }
+
+    switch (this.activeTranscription.llm_enhancement_status) {
+      case 'completed':
+        return 'llm-status-badge llm-completed';
+      case 'processing':
+        return 'llm-status-badge llm-processing';
+      case 'failed':
+        return 'llm-status-badge llm-failed';
+      default:
+        return 'llm-status-badge llm-not-started';
+    }
+  }
+
+  /**
+   * Get display text for LLM enhancement badge
+   */
+  getLLMStatusText(): string {
+    if (!this.activeTranscription || !this.activeTranscription.enable_llm_enhancement) {
+      return '';
+    }
+
+    switch (this.activeTranscription.llm_enhancement_status) {
+      case 'completed':
+        return '✨ Enhanced';
+      case 'processing':
+        return '✨ Processing';
+      case 'failed':
+        return '✨ Failed';
+      default:
+        return '✨ Pending';
+    }
+  }
+
+  /**
    * Load transcription by ID
    */
   private loadTranscription(id: string): void {

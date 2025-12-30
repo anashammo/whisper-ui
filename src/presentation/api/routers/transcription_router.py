@@ -267,7 +267,12 @@ async def get_audio_file(
         # Otherwise, use "inline" for browser playback
         headers = {}
         if download:
-            headers["Content-Disposition"] = f'attachment; filename="{audio_file.original_filename}"'
+            # Replace .webm extension with .wav for better compatibility
+            download_filename = audio_file.original_filename
+            if download_filename.lower().endswith('.webm'):
+                download_filename = download_filename[:-5] + '.wav'
+
+            headers["Content-Disposition"] = f'attachment; filename="{download_filename}"'
 
         # Return file
         return FileResponse(
