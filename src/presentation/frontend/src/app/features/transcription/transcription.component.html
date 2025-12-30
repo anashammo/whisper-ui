@@ -53,7 +53,15 @@
         <span class="status-badge" [ngClass]="transcriptionService.getStatusClass(activeTranscription.status)">
           {{ activeTranscription.status }}
         </span>
-        <span class="timestamp">{{ formatDate(activeTranscription.created_at) }}</span>
+        <!-- LLM Enhancement Status Badge -->
+        <span
+          *ngIf="activeTranscription.enable_llm_enhancement"
+          class="badge"
+          [ngClass]="getLLMStatusBadgeClass()"
+          [title]="'LLM Enhancement: ' + (activeTranscription.llm_enhancement_status || 'not started')">
+          {{ getLLMStatusText() }}
+        </span>
+        <span class="timestamp">📅 {{ formatDate(activeTranscription.created_at) }}</span>
       </div>
 
       <div class="metadata">
@@ -84,7 +92,7 @@
         </div>
         <div class="metadata-item" *ngIf="activeTranscription.enable_llm_enhancement && activeTranscription.llm_enhancement_status">
           <span class="label">LLM Enhancement Status:</span>
-          <span class="value" [ngClass]="{'llm-completed': activeTranscription.llm_enhancement_status === 'completed', 'llm-processing': activeTranscription.llm_enhancement_status === 'processing', 'llm-failed': activeTranscription.llm_enhancement_status === 'failed'}">
+          <span class="value">
             {{ activeTranscription.llm_enhancement_status }}
           </span>
         </div>
@@ -142,17 +150,17 @@
             (click)="isPlayingAudio ? stopAudio() : playAudio()"
             [title]="isPlayingAudio ? 'Stop audio' : 'Play original audio'"
           >
-            {{ isPlayingAudio ? '⏹️' : '▶️' }} {{ isPlayingAudio ? 'Stop' : 'Play' }} Audio
+            {{ isPlayingAudio ? '⏹️ Stop' : '▶️ Play' }}
           </button>
           <button
             class="btn btn-icon"
             (click)="downloadAudio()"
             title="Download original audio file"
           >
-            ⬇️ Download Audio
+            ⬇️ Download
           </button>
-          <button class="btn btn-icon" (click)="copyToClipboard()" title="Copy transcription to clipboard">
-            📋 Copy Transcription
+          <button class="btn btn-icon" (click)="copyToClipboard()" title="Copy original transcription to clipboard">
+            📋 Copy Original
           </button>
           <button
             *ngIf="activeTranscription.enable_llm_enhancement && activeTranscription.enhanced_text && !activeTranscription.llm_error_message"
@@ -180,9 +188,10 @@
           <h4 class="text-area-title">Original Whisper Transcription</h4>
           <textarea
             class="transcription-text-editable"
-            [(ngModel)]="activeTranscription.text"
+            [value]="activeTranscription.text || ''"
             placeholder="Transcribed text will appear here..."
             rows="15"
+            readonly
           ></textarea>
           <div class="word-count">
             Word count: {{ activeTranscription.text ? activeTranscription.text.split(' ').length : 0 }} | Characters: {{ activeTranscription.text ? activeTranscription.text.length : 0 }}
@@ -192,11 +201,11 @@
         <div class="text-area-section">
           <h4 class="text-area-title">Enhanced with LLM</h4>
           <textarea
-            class="transcription-text-editable llm-enhanced"
-            [(ngModel)]="activeTranscription.enhanced_text"
+            class="transcription-text-editable"
+            [value]="activeTranscription.enhanced_text || ''"
             placeholder="Enhanced text will appear here after LLM processing..."
             rows="15"
-            [readonly]="activeTranscription.llm_enhancement_status !== 'completed'"
+            readonly
           ></textarea>
           <div class="word-count" *ngIf="activeTranscription.enhanced_text">
             Word count: {{ activeTranscription.enhanced_text.split(' ').length }} | Characters: {{ activeTranscription.enhanced_text.length }}
@@ -212,9 +221,10 @@
       <ng-template #singleTextArea>
         <textarea
           class="transcription-text-editable"
-          [(ngModel)]="activeTranscription.text"
+          [value]="activeTranscription.text || ''"
           placeholder="Transcribed text will appear here..."
           rows="15"
+          readonly
         ></textarea>
         <div class="word-count">
           Word count: {{ activeTranscription.text ? activeTranscription.text.split(' ').length : 0 }} | Characters: {{ activeTranscription.text ? activeTranscription.text.length : 0 }}

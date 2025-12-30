@@ -24,8 +24,8 @@ export class HistoryComponent implements OnInit, OnDestroy {
   // Audio file expansion state
   expandedAudioFileIds: Set<string> = new Set<string>();
 
-  // Audio playback tracking
-  currentlyPlayingId: string | null = null;
+  // Audio playback tracking (now tracks audio file ID instead of transcription ID)
+  currentlyPlayingAudioFileId: string | null = null;
   currentAudio: HTMLAudioElement | null = null;
 
   constructor(
@@ -109,6 +109,46 @@ export class HistoryComponent implements OnInit, OnDestroy {
   getTruncatedText(text: string | null, maxLength: number = 100): string {
     if (!text) return 'No text available';
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  }
+
+  /**
+   * Get CSS class for LLM enhancement status badge
+   */
+  getLLMStatusBadgeClass(transcription: Transcription): string {
+    if (!transcription.enable_llm_enhancement) {
+      return 'llm-status-badge llm-not-enabled';
+    }
+
+    switch (transcription.llm_enhancement_status) {
+      case 'completed':
+        return 'llm-status-badge llm-completed';
+      case 'processing':
+        return 'llm-status-badge llm-processing';
+      case 'failed':
+        return 'llm-status-badge llm-failed';
+      default:
+        return 'llm-status-badge llm-not-started';
+    }
+  }
+
+  /**
+   * Get display text for LLM enhancement badge
+   */
+  getLLMStatusText(transcription: Transcription): string {
+    if (!transcription.enable_llm_enhancement) {
+      return '';
+    }
+
+    switch (transcription.llm_enhancement_status) {
+      case 'completed':
+        return '✨ Enhanced';
+      case 'processing':
+        return '✨ Processing';
+      case 'failed':
+        return '✨ Failed';
+      default:
+        return '✨ Pending';
+    }
   }
 
   /**
@@ -197,20 +237,47 @@ export class HistoryComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Check if audio is currently playing for a specific transcription
+   * Get first transcription ID from an audio file group
+   * Used to get audio URL (all transcriptions share same audio file)
    */
-  isPlaying(transcriptionId: string): boolean {
-    return this.currentlyPlayingId === transcriptionId;
+  getFirstTranscriptionId(audioFileId: string): string | null {
+    const audioFile = this.audioFilesWithTranscriptions.find(af => af.audio_file.id === audioFileId);
+    return audioFile && audioFile.transcriptions.length > 0 ? audioFile.transcriptions[0].id : null;
   }
 
   /**
-   * Play audio file for a transcription
+   * Check if audio is currently playing for a specific audio file
    */
-  playAudio(event: Event, transcriptionId: string): void {
+  isAudioFilePlaying(audioFileId: string): boolean {
+    return this.currentlyPlayingAudioFileId === audioFileId;
+  }
+
+  /**
+   * @deprecated Use isAudioFilePlaying() instead
+   * Check if audio is currently playing for a specific transcription
+   */
+  isPlaying(transcriptionId: string): boolean {
+    // This method is kept for backward compatibility but is no longer used
+    return false;
+  }
+
+  /**
+   * Play audio file for an audio file (header-level control)
+   */
+  playAudioFile(event: Event, audioFileId: string): void {
     event.stopPropagation(); // Prevent card click event
 
-    // If already playing this audio, do nothing (button will show stop instead)
-    if (this.currentlyPlayingId === transcriptionId) {
+    const transcriptionId = this.getFirstTranscriptionId(audioFileId);
+    if (!transcriptionId) {
+      this.error = 'No transcriptions found for this audio file';
+      return;
+    }
+
+    // If already playing this audio file, stop it
+    if (this.currentlyPlayingAudioFileId === audioFileId && this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio.currentTime = 0;
+      this.currentlyPlayingAudioFileId = null;
       return;
     }
 
@@ -222,51 +289,41 @@ export class HistoryComponent implements OnInit, OnDestroy {
 
     const audioUrl = this.transcriptionService.getAudioUrl(transcriptionId);
     this.currentAudio = new Audio(audioUrl);
-    this.currentlyPlayingId = transcriptionId;
+    this.currentlyPlayingAudioFileId = audioFileId;
     this.error = null;
 
     this.currentAudio.addEventListener('error', (e) => {
       console.error('Audio playback error:', e);
-      this.currentlyPlayingId = null;
+      this.currentlyPlayingAudioFileId = null;
       this.error = 'Failed to play audio file';
     });
 
     this.currentAudio.addEventListener('ended', () => {
-      this.currentlyPlayingId = null;
+      this.currentlyPlayingAudioFileId = null;
     });
 
     this.currentAudio.addEventListener('pause', () => {
-      this.currentlyPlayingId = null;
+      this.currentlyPlayingAudioFileId = null;
     });
 
     this.currentAudio.play().catch(err => {
       console.error('Play failed:', err);
-      this.currentlyPlayingId = null;
+      this.currentlyPlayingAudioFileId = null;
       this.error = 'Failed to play audio: ' + err.message;
     });
   }
 
   /**
-   * Stop audio playback
+   * Download audio file for an audio file (header-level control)
    */
-  stopAudio(event: Event): void {
+  downloadAudioFile(event: Event, audioFileId: string): void {
     event.stopPropagation(); // Prevent card click event
 
-    if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio.currentTime = 0;
-      this.currentAudio = null;
+    const transcriptionId = this.getFirstTranscriptionId(audioFileId);
+    if (!transcriptionId) {
+      this.error = 'No transcriptions found for this audio file';
+      return;
     }
-    this.currentlyPlayingId = null;
-  }
-
-  /**
-   * Download audio file for a transcription
-   * Creates a temporary anchor element to trigger browser download
-   */
-  downloadAudio(event: Event, transcriptionId: string): void {
-    // Prevent event bubbling (don't trigger row click)
-    event.stopPropagation();
 
     try {
       // Get download URL with download=true parameter
@@ -282,11 +339,39 @@ export class HistoryComponent implements OnInit, OnDestroy {
       anchor.click();
       document.body.removeChild(anchor);
 
-      console.log(`Initiated download for transcription ${transcriptionId}`);
+      console.log(`Initiated download for audio file ${audioFileId}`);
     } catch (err) {
       console.error('Download failed:', err);
       this.error = 'Failed to download audio file';
     }
+  }
+
+  /**
+   * @deprecated No longer used - audio controls moved to header
+   * Play audio file for a transcription
+   */
+  playAudio(event: Event, transcriptionId: string): void {
+    event.stopPropagation();
+    // Method kept for backward compatibility but no longer used
+  }
+
+  /**
+   * @deprecated No longer used - audio controls moved to header
+   * Stop audio playback
+   */
+  stopAudio(event: Event): void {
+    event.stopPropagation();
+    // Method kept for backward compatibility but no longer used
+  }
+
+  /**
+   * @deprecated No longer used - audio controls moved to header
+   * Download audio file for a transcription
+   * Creates a temporary anchor element to trigger browser download
+   */
+  downloadAudio(event: Event, transcriptionId: string): void {
+    event.stopPropagation();
+    // Method kept for backward compatibility but no longer used
   }
 
   /**

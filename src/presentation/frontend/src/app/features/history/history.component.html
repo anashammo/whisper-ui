@@ -48,14 +48,24 @@
           </div>
         </div>
         <div class="header-actions">
+          <!-- Audio Controls -->
           <button
-            class="btn btn-delete-audio"
+            class="btn-play-header"
+            (click)="playAudioFile($event, audioFileGroup.audio_file.id)"
+            [title]="isAudioFilePlaying(audioFileGroup.audio_file.id) ? 'Stop audio' : 'Play audio'">
+            {{ isAudioFilePlaying(audioFileGroup.audio_file.id) ? '⏹️' : '▶️' }}
+          </button>
+          <button
+            class="btn-download-header"
+            (click)="downloadAudioFile($event, audioFileGroup.audio_file.id)"
+            title="Download audio file">
+            ⬇️
+          </button>
+          <button
+            class="btn-delete-audio"
             (click)="deleteAudioFile(audioFileGroup.audio_file.id, audioFileGroup.transcription_count, $event)"
             title="Delete audio file and all transcriptions">
-            🗑️ Delete All
-          </button>
-          <button class="expand-button" [class.expanded]="isExpanded(audioFileGroup.audio_file.id)" (click)="toggleExpanded(audioFileGroup.audio_file.id)">
-            {{ isExpanded(audioFileGroup.audio_file.id) ? '▼' : '▶' }}
+            🗑️
           </button>
         </div>
       </div>
@@ -74,11 +84,32 @@
               <span class="status-badge" [ngClass]="transcriptionService.getStatusClass(transcription.status)">
                 {{ transcription.status }}
               </span>
+              <!-- LLM Enhancement Status Badge -->
+              <span
+                *ngIf="transcription.enable_llm_enhancement"
+                class="badge"
+                [ngClass]="getLLMStatusBadgeClass(transcription)"
+                [title]="'LLM Enhancement: ' + (transcription.llm_enhancement_status || 'not started')">
+                {{ getLLMStatusText(transcription) }}
+              </span>
             </div>
 
             <!-- Text Preview -->
             <div class="transcription-text-preview">
-              {{ getTruncatedText(transcription.text, 80) }}
+              <div class="text-label">Original:</div>
+              <div class="text-content">
+                {{ getTruncatedText(transcription.text, 80) }}
+              </div>
+            </div>
+
+            <!-- Enhanced Text Preview (only if exists) -->
+            <div
+              class="transcription-text-preview enhanced-text-preview"
+              *ngIf="transcription.enhanced_text">
+              <div class="text-label enhanced-label">✨ Enhanced:</div>
+              <div class="text-content">
+                {{ getTruncatedText(transcription.enhanced_text, 80) }}
+              </div>
             </div>
 
             <!-- Metadata -->
@@ -93,20 +124,6 @@
 
             <!-- Actions -->
             <div class="transcription-item-actions">
-              <button
-                class="btn-icon btn-play-small"
-                (click)="isPlaying(transcription.id) ? stopAudio($event) : playAudio($event, transcription.id)"
-                [title]="isPlaying(transcription.id) ? 'Stop audio' : 'Play audio'"
-              >
-                {{ isPlaying(transcription.id) ? '⏹️' : '▶️' }}
-              </button>
-              <button
-                class="btn-icon btn-download-small"
-                (click)="downloadAudio($event, transcription.id)"
-                title="Download audio file"
-              >
-                ⬇️
-              </button>
               <button
                 class="btn-icon btn-delete-small"
                 (click)="deleteTranscription($event, transcription.id)"

@@ -262,18 +262,34 @@ async def get_audio_file(
                 detail=f"Audio file does not exist on disk"
             )
 
-        # Determine Content-Disposition header
+        # Determine Content-Disposition header and media type
         # If download=true, use "attachment" to force download
         # Otherwise, use "inline" for browser playback
         headers = {}
+        response_media_type = audio_file.mime_type  # Default to original
+
         if download:
-            headers["Content-Disposition"] = f'attachment; filename="{audio_file.original_filename}"'
+            # Safely handle None filename with proper extension fallback
+            if audio_file.original_filename:
+                download_filename = audio_file.original_filename
+            else:
+                # Derive extension from file_path or default to .wav
+                from pathlib import Path
+                ext = Path(audio_file.file_path).suffix or '.wav'
+                download_filename = f"download{ext}"
+
+            # Check if we need to convert .webm to .wav
+            if download_filename.lower().endswith('.webm'):
+                download_filename = download_filename[:-5] + '.wav'
+                # Update media type to match the new extension
+                response_media_type = 'audio/wav'
+
+            headers["Content-Disposition"] = f'attachment; filename="{download_filename}"'
 
         # Return file
         return FileResponse(
             path=audio_file.file_path,
-            media_type=audio_file.mime_type,
-            filename=audio_file.original_filename,
+            media_type=response_media_type,
             headers=headers
         )
 
