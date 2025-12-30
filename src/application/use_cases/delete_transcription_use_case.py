@@ -8,14 +8,13 @@ from ..interfaces.file_storage_interface import FileStorageInterface
 
 class DeleteTranscriptionUseCase:
     """
-    Use case for deleting a transcription and its associated audio file.
+    Use case for deleting a transcription.
 
     This use case:
     1. Retrieves the transcription
-    2. Retrieves the associated audio file
-    3. Deletes the audio file from storage
-    4. Deletes the audio file entity
-    5. Deletes the transcription entity
+    2. Checks if this is the last transcription for the audio file
+    3. Deletes the transcription entity
+    4. If this was the last transcription, also deletes the audio file and its storage
     """
 
     def __init__(
@@ -54,22 +53,29 @@ class DeleteTranscriptionUseCase:
         if not transcription:
             return False
 
-        # Get associated audio file
-        audio_file = await self.audio_file_repo.get_by_id(transcription.audio_file_id)
+        # Get all transcriptions for this audio file to check if this is the last one
+        all_transcriptions = await self.transcription_repo.get_by_audio_file_id(
+            transcription.audio_file_id
+        )
 
-        # Delete audio file from storage if it exists
-        if audio_file and audio_file.file_path:
-            try:
-                await self.file_storage.delete(audio_file.file_path)
-            except Exception as e:
-                # Log but don't fail if file doesn't exist
-                print(f"Warning: Failed to delete audio file: {e}")
-
-        # Delete audio file entity
-        if audio_file:
-            await self.audio_file_repo.delete(transcription.audio_file_id)
-
-        # Delete transcription entity
+        # Delete transcription entity first
         success = await self.transcription_repo.delete(transcription_id)
+
+        # Only delete audio file if this was the last transcription
+        if len(all_transcriptions) == 1:
+            # This was the last transcription, delete the audio file
+            audio_file = await self.audio_file_repo.get_by_id(transcription.audio_file_id)
+
+            if audio_file:
+                # Delete audio file from storage
+                if audio_file.file_path:
+                    try:
+                        await self.file_storage.delete(audio_file.file_path)
+                    except Exception as e:
+                        # Log but don't fail if file doesn't exist
+                        print(f"Warning: Failed to delete audio file: {e}")
+
+                # Delete audio file entity
+                await self.audio_file_repo.delete(transcription.audio_file_id)
 
         return success

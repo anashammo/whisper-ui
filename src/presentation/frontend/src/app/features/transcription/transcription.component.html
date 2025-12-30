@@ -144,11 +144,23 @@
           >
             {{ isPlayingAudio ? '⏹️' : '▶️' }} {{ isPlayingAudio ? 'Stop' : 'Play' }} Audio
           </button>
-          <button class="btn btn-icon" (click)="copyToClipboard()" title="Copy to clipboard">
-            📋 Copy
+          <button
+            class="btn btn-icon"
+            (click)="downloadAudio()"
+            title="Download original audio file"
+          >
+            ⬇️ Download Audio
           </button>
-          <button class="btn btn-icon" (click)="downloadText()" title="Download as text file">
-            💾 Download
+          <button class="btn btn-icon" (click)="copyToClipboard()" title="Copy transcription to clipboard">
+            📋 Copy Transcription
+          </button>
+          <button
+            *ngIf="activeTranscription.enable_llm_enhancement && activeTranscription.enhanced_text && !activeTranscription.llm_error_message"
+            class="btn btn-icon"
+            (click)="copyEnhancedToClipboard()"
+            title="Copy enhanced transcription to clipboard"
+          >
+            📋 Copy Enhanced
           </button>
           <button
             *ngIf="canEnhance()"

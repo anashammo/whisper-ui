@@ -143,6 +143,14 @@ export class ApiService {
   }
 
   /**
+   * Get audio file download URL with download parameter
+   * This triggers browser download instead of inline playback
+   */
+  getAudioDownloadUrl(id: string): string {
+    return `${this.apiUrl}/transcriptions/${id}/audio?download=true`;
+  }
+
+  /**
    * Check model status (cached, loaded, downloading)
    */
   getModelStatus(modelName: string): Observable<any> {

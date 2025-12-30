@@ -101,6 +101,13 @@
                 {{ isPlaying(transcription.id) ? '⏹️' : '▶️' }}
               </button>
               <button
+                class="btn-icon btn-download-small"
+                (click)="downloadAudio($event, transcription.id)"
+                title="Download audio file"
+              >
+                ⬇️
+              </button>
+              <button
                 class="btn-icon btn-delete-small"
                 (click)="deleteTranscription($event, transcription.id)"
                 title="Delete transcription"

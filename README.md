@@ -705,3 +705,5 @@ This project is for educational and internal use.
 ## Support
 
 For issues or questions, please refer to the project documentation or create an issue in the repository.
+
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/anashammo/whisper-ui?utm_source=oss&utm_medium=github&utm_campaign=anashammo%2Fwhisper-ui&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)

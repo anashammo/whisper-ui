@@ -113,6 +113,14 @@ transcriptions
 - Dual text areas show original Whisper and LLM-enhanced transcriptions side-by-side (when LLM enabled)
 - "Enhance with LLM" button for completed transcriptions that opted in
 - LLM enhancement checkbox in upload/recording/re-transcription forms
+- **Audio playback and download**:
+  - History view: Play (▶️) and Download (⬇️) buttons on each transcription card
+  - Details view: Play Audio and Download Audio buttons in Transcription Result section
+  - Download button triggers browser download with original filename
+  - Available for all transcription statuses (pending, processing, completed, failed)
+- **Copy functionality** in Details view:
+  - "Copy Transcription" - copies original Whisper text to clipboard
+  - "Copy Enhanced" - copies LLM-enhanced text (only visible when enhancement successful)
 - Footer includes link to WER (Word Error Rate) comparison tool
 
 **Important**: When audio file is deleted, all associated transcriptions are automatically deleted (CASCADE).
@@ -413,6 +421,59 @@ eventSource.onmessage = (event) => {
   this.downloadProgress = progress.progress;
 };
 ```
+
+### Audio Download Endpoint
+
+The audio endpoint supports both streaming (for playback) and downloading (for saving):
+
+**Endpoint**: `GET /api/v1/transcriptions/{transcription_id}/audio`
+
+**Query Parameters**:
+- `download` (optional, boolean, default: `false`): If `true`, forces browser download with `Content-Disposition: attachment`
+
+**Backend Implementation** (`transcription_router.py`):
+```python
+@router.get("/transcriptions/{transcription_id}/audio")
+async def get_audio_file(
+    transcription_id: str,
+    download: bool = Query(False, description="If true, sets Content-Disposition to attachment for download"),
+    db: Session = Depends(get_db)
+):
+    # ... get audio file from database ...
+
+    # Set Content-Disposition header for download
+    headers = {}
+    if download:
+        headers["Content-Disposition"] = f'attachment; filename="{audio_file.original_filename}"'
+
+    return FileResponse(
+        path=audio_file.file_path,
+        media_type=audio_file.mime_type,
+        filename=audio_file.original_filename,
+        headers=headers
+    )
+```
+
+**Frontend Usage**:
+```typescript
+// For playback (inline)
+const audioUrl = this.apiService.getAudioUrl(transcriptionId);
+// Returns: http://localhost:8001/api/v1/transcriptions/{id}/audio
+
+// For download
+const downloadUrl = this.apiService.getAudioDownloadUrl(transcriptionId);
+// Returns: http://localhost:8001/api/v1/transcriptions/{id}/audio?download=true
+
+// Trigger download
+const anchor = document.createElement('a');
+anchor.href = downloadUrl;
+anchor.click();
+```
+
+**Behavior**:
+- `download=false` (default): Browser streams audio for inline playback
+- `download=true`: Browser downloads file with original filename
+- Backward compatible: Existing play functionality unchanged
 
 ## Testing Notes
 

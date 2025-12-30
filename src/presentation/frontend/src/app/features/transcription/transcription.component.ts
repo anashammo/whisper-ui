@@ -239,6 +239,37 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Download audio file for current transcription
+   * Creates a temporary anchor element to trigger browser download
+   */
+  downloadAudio(): void {
+    if (!this.transcription) {
+      console.error('No transcription available for download');
+      return;
+    }
+
+    try {
+      // Get download URL with download=true parameter
+      const downloadUrl = this.transcriptionService.getAudioDownloadUrl(this.transcription.id);
+
+      // Create temporary anchor element
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.style.display = 'none';
+
+      // Append to body, click, then remove
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+
+      console.log(`Initiated download for transcription ${this.transcription.id}`);
+    } catch (err) {
+      console.error('Download failed:', err);
+      this.error = 'Failed to download audio file';
+    }
+  }
+
+  /**
    * Copy transcription text to clipboard
    */
   copyToClipboard(): void {
@@ -246,6 +277,20 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       navigator.clipboard.writeText(this.activeTranscription.text).then(() => {
         // Use custom success popup instead of browser alert
         this.popupService.success('Transcription copied to clipboard!')
+          .pipe(takeUntil(this.destroy$))
+          .subscribe();
+      });
+    }
+  }
+
+  /**
+   * Copy enhanced transcription text to clipboard
+   */
+  copyEnhancedToClipboard(): void {
+    if (this.activeTranscription?.enhanced_text) {
+      navigator.clipboard.writeText(this.activeTranscription.enhanced_text).then(() => {
+        // Use custom success popup instead of browser alert
+        this.popupService.success('Enhanced transcription copied to clipboard!')
           .pipe(takeUntil(this.destroy$))
           .subscribe();
       });

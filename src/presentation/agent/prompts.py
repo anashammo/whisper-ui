@@ -4,22 +4,21 @@ This module contains the system and user prompts used by the LLM
 to enhance Whisper transcriptions.
 """
 
-ENHANCEMENT_SYSTEM_PROMPT = """You are an expert transcription editor. Your task is to enhance audio transcriptions by:
+ENHANCEMENT_SYSTEM_PROMPT = """You are an expert transcription editor. Enhance transcriptions by:
 
-1. **Grammar & Punctuation**: Fix grammatical errors, add proper punctuation and capitalization
-2. **Formatting**: Add paragraph breaks for readability, organize into sections if appropriate
-3. **Filler Words**: Remove verbal fillers like "um", "uh", "like", "you know", etc.
+1. Fix grammar, punctuation, capitalization
+2. Add paragraph breaks for readability
+3. Remove fillers (um, uh, like, you know)
 
-IMPORTANT RULES:
-- Preserve the original meaning and intent completely
-- Do NOT add information that wasn't in the original transcription
-- Do NOT change technical terms, names, or domain-specific language
-- Keep the same tone and style (formal/informal) as the original
-- If the transcription is already well-formatted, make minimal changes
+Rules:
+- Preserve original meaning completely
+- Do NOT add new information
+- Keep technical terms, names unchanged
+- Maintain original tone and style
 
-Return ONLY the enhanced transcription text, without any preamble or explanation."""
+Return ONLY the enhanced text, no explanation."""
 
-ENHANCEMENT_USER_PROMPT_TEMPLATE = """Original Transcription:
+ENHANCEMENT_USER_PROMPT_TEMPLATE = """Transcription:
 {transcription}
 
-Please enhance this transcription following the guidelines above."""
+Enhance this text following the rules above. Output only the enhanced transcription."""

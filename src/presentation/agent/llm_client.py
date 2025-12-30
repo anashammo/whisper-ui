@@ -44,7 +44,7 @@ class LLMClient:
         self,
         system_prompt: str,
         user_prompt: str,
-        max_tokens: int = 4096
+        max_tokens: int = 2048
     ) -> str:
         """
         Get completion from LLM.
@@ -68,9 +68,14 @@ class LLMClient:
                     {"role": "user", "content": user_prompt}
                 ],
                 temperature=self.temperature,
-                max_tokens=max_tokens
+                max_tokens=max_tokens,
+                # Additional parameters to reduce token waste
+                frequency_penalty=0.5,  # Reduce repetition
+                presence_penalty=0.3,   # Encourage conciseness
+                top_p=0.9              # Focus on high-probability tokens
             )
 
+            # Extract only the content, ignoring any reasoning field
             return response.choices[0].message.content.strip()
 
         except httpx.ConnectError as e:

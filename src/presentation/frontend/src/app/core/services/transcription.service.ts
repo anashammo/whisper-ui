@@ -218,6 +218,14 @@ export class TranscriptionService {
   }
 
   /**
+   * Get audio file download URL
+   * Triggers browser download instead of inline playback
+   */
+  getAudioDownloadUrl(id: string): string {
+    return this.apiService.getAudioDownloadUrl(id);
+  }
+
+  /**
    * Load all transcriptions for a specific audio file
    */
   loadAudioFileTranscriptions(audioFileId: string): Observable<Transcription[]> {

@@ -261,6 +261,35 @@ export class HistoryComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Download audio file for a transcription
+   * Creates a temporary anchor element to trigger browser download
+   */
+  downloadAudio(event: Event, transcriptionId: string): void {
+    // Prevent event bubbling (don't trigger row click)
+    event.stopPropagation();
+
+    try {
+      // Get download URL with download=true parameter
+      const downloadUrl = this.transcriptionService.getAudioDownloadUrl(transcriptionId);
+
+      // Create temporary anchor element
+      const anchor = document.createElement('a');
+      anchor.href = downloadUrl;
+      anchor.style.display = 'none';
+
+      // Append to body, click, then remove
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+
+      console.log(`Initiated download for transcription ${transcriptionId}`);
+    } catch (err) {
+      console.error('Download failed:', err);
+      this.error = 'Failed to download audio file';
+    }
+  }
+
+  /**
    * Delete a transcription
    */
   /**
