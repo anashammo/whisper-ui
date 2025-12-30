@@ -169,7 +169,9 @@ class TranscribeAudioUseCase:
             )
 
             # Step 7.5: If LLM enhancement enabled, enhance the transcription
+            print(f"[DEBUG] Checking LLM enhancement: enable_llm_enhancement={upload_dto.enable_llm_enhancement}")
             if upload_dto.enable_llm_enhancement:
+                print("[DEBUG] LLM enhancement is enabled, starting enhancement...")
                 try:
                     # Mark LLM enhancement as processing
                     saved_transcription.mark_llm_processing()

@@ -75,6 +75,9 @@ async def create_transcription(
             enable_llm_enhancement=enable_llm_enhancement
         )
 
+        # Debug logging
+        print(f"[DEBUG] Upload DTO: enable_llm_enhancement={upload_dto.enable_llm_enhancement}, model={upload_dto.model}")
+
         # Execute use case
         transcription_dto = await use_case.execute(upload_dto)
 
