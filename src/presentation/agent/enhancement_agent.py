@@ -4,7 +4,7 @@ This module implements a simple LangGraph agent for enhancing transcriptions
 using a local LLM.
 """
 from typing import Dict, Any, Optional, TypedDict
-from langgraph.graph import Graph, StateGraph, END
+from langgraph.graph import StateGraph, END
 from .llm_client import LLMClient
 from .prompts import ENHANCEMENT_SYSTEM_PROMPT, ENHANCEMENT_USER_PROMPT_TEMPLATE
 
@@ -38,11 +38,14 @@ class EnhancementAgent:
         self.llm_client = llm_client
         self.graph = self._build_graph()
 
-    def _build_graph(self) -> Graph:
+    def _build_graph(self):
         """
         Build LangGraph workflow.
 
         Creates a simple single-node graph that performs the enhancement.
+
+        Returns:
+            Compiled LangGraph workflow
         """
         # Create graph with state
         workflow = StateGraph(EnhancementState)
