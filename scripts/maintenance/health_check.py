@@ -22,16 +22,7 @@ import argparse
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-
-class Colors:
-    """ANSI color codes"""
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    RESET = '\033[0m'
-    BOLD = '\033[1m'
+from scripts.utils.terminal import Colors
 
 
 class HealthChecker:
@@ -117,35 +108,33 @@ class HealthChecker:
 
         # Check if we can connect
         try:
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
+            with sqlite3.connect(db_path) as conn:
+                cursor = conn.cursor()
 
-            # Check tables exist
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = [row[0] for row in cursor.fetchall()]
+                # Check tables exist
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                tables = [row[0] for row in cursor.fetchall()]
 
-            required_tables = ['audio_files', 'transcriptions']
-            missing_tables = [t for t in required_tables if t not in tables]
+                required_tables = ['audio_files', 'transcriptions']
+                missing_tables = [t for t in required_tables if t not in tables]
 
-            if missing_tables:
-                self.check("Database schema", False, f"Missing tables: {', '.join(missing_tables)}")
-            else:
-                # Count records
-                cursor.execute("SELECT COUNT(*) FROM audio_files")
-                audio_count = cursor.fetchone()[0]
+                if missing_tables:
+                    self.check("Database schema", False, f"Missing tables: {', '.join(missing_tables)}")
+                else:
+                    # Count records
+                    cursor.execute("SELECT COUNT(*) FROM audio_files")
+                    audio_count = cursor.fetchone()[0]
 
-                cursor.execute("SELECT COUNT(*) FROM transcriptions")
-                trans_count = cursor.fetchone()[0]
+                    cursor.execute("SELECT COUNT(*) FROM transcriptions")
+                    trans_count = cursor.fetchone()[0]
 
-                size_mb = db_path.stat().st_size / (1024 * 1024)
+                    size_mb = db_path.stat().st_size / (1024 * 1024)
 
-                self.check(
-                    "Database",
-                    True,
-                    f"{audio_count} audio files, {trans_count} transcriptions ({size_mb:.2f} MB)"
-                )
-
-            conn.close()
+                    self.check(
+                        "Database",
+                        True,
+                        f"{audio_count} audio files, {trans_count} transcriptions ({size_mb:.2f} MB)"
+                    )
         except Exception as e:
             self.check("Database access", False, str(e))
 

@@ -269,8 +269,14 @@ async def get_audio_file(
         response_media_type = audio_file.mime_type  # Default to original
 
         if download:
-            # Safely handle None filename and replace .webm extension with .wav for better compatibility
-            download_filename = audio_file.original_filename or "download"
+            # Safely handle None filename with proper extension fallback
+            if audio_file.original_filename:
+                download_filename = audio_file.original_filename
+            else:
+                # Derive extension from file_path or default to .wav
+                from pathlib import Path
+                ext = Path(audio_file.file_path).suffix or '.wav'
+                download_filename = f"download{ext}"
 
             # Check if we need to convert .webm to .wav
             if download_filename.lower().endswith('.webm'):
@@ -284,7 +290,6 @@ async def get_audio_file(
         return FileResponse(
             path=audio_file.file_path,
             media_type=response_media_type,
-            filename=audio_file.original_filename,
             headers=headers
         )
 

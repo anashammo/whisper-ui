@@ -19,16 +19,7 @@ from typing import List, Tuple, Optional
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-
-class Colors:
-    """ANSI color codes"""
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    RESET = '\033[0m'
-    BOLD = '\033[1m'
+from scripts.utils.terminal import Colors
 
 
 COMMIT_TYPES = {
@@ -241,7 +232,7 @@ def interactive_commit():
 
     if confirm in ['', 'y', 'yes']:
         # Create the commit
-        returncode, stdout, stderr = run_command(['git', 'commit', '-m', full_message])
+        returncode, _, stderr = run_command(['git', 'commit', '-m', full_message])
 
         if returncode == 0:
             print(f"\n{Colors.GREEN}[OK] Commit created successfully!{Colors.RESET}")
@@ -284,7 +275,7 @@ def main():
         print(f"\n{Colors.CYAN}Creating commit...{Colors.RESET}\n")
         print(full_message)
 
-        returncode, stdout, stderr = run_command(['git', 'commit', '-m', full_message])
+        returncode, _, stderr = run_command(['git', 'commit', '-m', full_message])
 
         if returncode == 0:
             print(f"\n{Colors.GREEN}[OK] Commit created successfully!{Colors.RESET}")

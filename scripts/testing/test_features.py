@@ -19,20 +19,11 @@ from typing import Dict, List, Tuple
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
+from scripts.utils.terminal import Colors
+
 # Test configuration
 API_BASE_URL = "http://localhost:8001/api/v1"
 TIMEOUT = 10  # seconds
-
-
-class Colors:
-    """ANSI color codes for terminal output"""
-    GREEN = '\033[92m'
-    RED = '\033[91m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[94m'
-    CYAN = '\033[96m'
-    RESET = '\033[0m'
-    BOLD = '\033[1m'
 
 
 def print_header(text: str):
