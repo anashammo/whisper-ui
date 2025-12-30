@@ -73,6 +73,7 @@ def get_transcribe_audio_use_case(
     db: Session = Depends(get_db),
     whisper_service: WhisperService = Depends(get_whisper_service),
     file_storage: LocalFileStorage = Depends(get_file_storage),
+    llm_service: LLMEnhancementServiceImpl = Depends(get_llm_enhancement_service),
     settings: Settings = Depends(get_settings)
 ) -> TranscribeAudioUseCase:
     """
@@ -82,6 +83,7 @@ def get_transcribe_audio_use_case(
         db: Database session
         whisper_service: Whisper service for transcription
         file_storage: File storage service
+        llm_service: LLM enhancement service
         settings: Application settings
 
     Returns:
@@ -95,6 +97,7 @@ def get_transcribe_audio_use_case(
         audio_file_repository=audio_file_repo,
         speech_recognition_service=whisper_service,
         file_storage=file_storage,
+        llm_enhancement_service=llm_service,
         max_file_size_mb=settings.max_file_size_mb,
         max_duration_seconds=settings.max_duration_seconds
     )
@@ -160,7 +163,8 @@ def get_delete_transcription_use_case(
 
 def get_retranscribe_audio_use_case(
     db: Session = Depends(get_db),
-    whisper_service: WhisperService = Depends(get_whisper_service)
+    whisper_service: WhisperService = Depends(get_whisper_service),
+    llm_service: LLMEnhancementServiceImpl = Depends(get_llm_enhancement_service)
 ) -> RetranscribeAudioUseCase:
     """
     Create RetranscribeAudioUseCase with dependencies injected.
@@ -168,6 +172,7 @@ def get_retranscribe_audio_use_case(
     Args:
         db: Database session
         whisper_service: Whisper service for transcription
+        llm_service: LLM enhancement service
 
     Returns:
         RetranscribeAudioUseCase instance
@@ -178,7 +183,8 @@ def get_retranscribe_audio_use_case(
     return RetranscribeAudioUseCase(
         transcription_repository=transcription_repo,
         audio_file_repository=audio_file_repo,
-        speech_recognition_service=whisper_service
+        speech_recognition_service=whisper_service,
+        llm_enhancement_service=llm_service
     )
 
 

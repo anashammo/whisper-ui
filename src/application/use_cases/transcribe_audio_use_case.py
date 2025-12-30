@@ -9,6 +9,7 @@ from ...domain.entities.audio_file import AudioFile
 from ...domain.repositories.transcription_repository import TranscriptionRepository
 from ...domain.repositories.audio_file_repository import AudioFileRepository
 from ...domain.services.speech_recognition_service import SpeechRecognitionService
+from ...domain.services.llm_enhancement_service import LLMEnhancementService
 from ..interfaces.file_storage_interface import FileStorageInterface
 from ..dto.audio_upload_dto import AudioUploadDTO
 from ..dto.transcription_dto import TranscriptionDTO
@@ -34,6 +35,7 @@ class TranscribeAudioUseCase:
         audio_file_repository: AudioFileRepository,
         speech_recognition_service: SpeechRecognitionService,
         file_storage: FileStorageInterface,
+        llm_enhancement_service: LLMEnhancementService,
         max_file_size_mb: int = 25,
         max_duration_seconds: int = 30
     ):
@@ -45,6 +47,7 @@ class TranscribeAudioUseCase:
             audio_file_repository: Repository for audio files
             speech_recognition_service: Service for speech-to-text
             file_storage: Service for file storage
+            llm_enhancement_service: Service for LLM enhancement
             max_file_size_mb: Maximum allowed file size in MB
             max_duration_seconds: Maximum allowed audio duration in seconds
         """
@@ -52,6 +55,7 @@ class TranscribeAudioUseCase:
         self.audio_file_repo = audio_file_repository
         self.speech_service = speech_recognition_service
         self.file_storage = file_storage
+        self.llm_service = llm_enhancement_service
         self.max_file_size_mb = max_file_size_mb
         self.max_duration_seconds = max_duration_seconds
 
@@ -163,6 +167,35 @@ class TranscribeAudioUseCase:
                 language=result['language'],
                 processing_time=processing_time
             )
+
+            # Step 7.5: If LLM enhancement enabled, enhance the transcription
+            if upload_dto.enable_llm_enhancement:
+                try:
+                    # Mark LLM enhancement as processing
+                    saved_transcription.mark_llm_processing()
+                    await self.transcription_repo.update(saved_transcription)
+
+                    # Measure LLM processing time
+                    llm_start_time = time.time()
+
+                    # Call LLM enhancement service
+                    llm_result = await self.llm_service.enhance_transcription(
+                        text=saved_transcription.text,
+                        language=saved_transcription.language
+                    )
+
+                    llm_processing_time = time.time() - llm_start_time
+
+                    # Complete LLM enhancement
+                    saved_transcription.complete_llm_enhancement(
+                        enhanced_text=llm_result['enhanced_text'],
+                        processing_time=llm_processing_time
+                    )
+
+                except Exception as llm_error:
+                    # If LLM fails, mark it but don't fail the whole transcription
+                    # User still gets the original Whisper transcription
+                    saved_transcription.fail_llm_enhancement(str(llm_error))
 
         except Exception as e:
             # Mark as failed if transcription fails

@@ -8,6 +8,7 @@ from ...domain.entities.transcription import Transcription, TranscriptionStatus
 from ...domain.repositories.transcription_repository import TranscriptionRepository
 from ...domain.repositories.audio_file_repository import AudioFileRepository
 from ...domain.services.speech_recognition_service import SpeechRecognitionService
+from ...domain.services.llm_enhancement_service import LLMEnhancementService
 from ..dto.transcription_dto import TranscriptionDTO
 
 
@@ -23,11 +24,13 @@ class RetranscribeAudioUseCase:
         self,
         transcription_repository: TranscriptionRepository,
         audio_file_repository: AudioFileRepository,
-        speech_recognition_service: SpeechRecognitionService
+        speech_recognition_service: SpeechRecognitionService,
+        llm_enhancement_service: LLMEnhancementService
     ):
         self.transcription_repo = transcription_repository
         self.audio_file_repo = audio_file_repository
         self.speech_service = speech_recognition_service
+        self.llm_service = llm_enhancement_service
 
     async def execute(
         self,
@@ -103,6 +106,35 @@ class RetranscribeAudioUseCase:
                 duration=result.get('duration') or audio_file.duration_seconds or 0.0,
                 processing_time=processing_time
             )
+
+            # Step 5.5: If LLM enhancement enabled, enhance the transcription
+            if enable_llm_enhancement:
+                try:
+                    # Mark LLM enhancement as processing
+                    saved_transcription.mark_llm_processing()
+                    await self.transcription_repo.update(saved_transcription)
+
+                    # Measure LLM processing time
+                    llm_start_time = time.time()
+
+                    # Call LLM enhancement service
+                    llm_result = await self.llm_service.enhance_transcription(
+                        text=saved_transcription.text,
+                        language=saved_transcription.language
+                    )
+
+                    llm_processing_time = time.time() - llm_start_time
+
+                    # Complete LLM enhancement
+                    saved_transcription.complete_llm_enhancement(
+                        enhanced_text=llm_result['enhanced_text'],
+                        processing_time=llm_processing_time
+                    )
+
+                except Exception as llm_error:
+                    # If LLM fails, mark it but don't fail the whole transcription
+                    saved_transcription.fail_llm_enhancement(str(llm_error))
+
         except Exception as e:
             saved_transcription.fail(str(e))
 
