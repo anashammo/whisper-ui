@@ -26,6 +26,17 @@ try:
         print(f'  Transcriptions: {len(transcriptions)}')
         for t in transcriptions:
             print(f'    - {t.id[:8]}... | Model: {t.model} | Status: {t.status} | Duration: {t.duration_seconds}s')
+            # Show LLM enhancement info if enabled
+            if t.enable_llm_enhancement:
+                llm_status = t.llm_enhancement_status or 'pending'
+                llm_info = f'      LLM: {llm_status}'
+                if t.llm_processing_time_seconds:
+                    llm_info += f' ({t.llm_processing_time_seconds:.2f}s)'
+                if t.enhanced_text:
+                    llm_info += f' | {len(t.enhanced_text)} chars'
+                if t.llm_error_message:
+                    llm_info += f' | Error: {t.llm_error_message[:40]}...'
+                print(llm_info)
         print()
 finally:
     db.close()

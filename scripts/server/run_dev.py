@@ -49,6 +49,7 @@ import sys
 from pathlib import Path
 
 # Add project root to path (scripts/server/ -> scripts/ -> project root)
+# Path(__file__).parent = scripts/server/, .parent.parent = scripts/, .parent.parent.parent = project root
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.infrastructure.config.settings import get_settings

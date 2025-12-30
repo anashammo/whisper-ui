@@ -29,6 +29,17 @@ try:
             print(f'    Transcriptions: {len(transcriptions)}')
             for t in transcriptions:
                 print(f'      * {t.model} - {t.status.value}')
+                # Show LLM enhancement info if enabled
+                if t.enable_llm_enhancement:
+                    llm_status = t.llm_enhancement_status or 'pending'
+                    print(f'        LLM: {llm_status}', end='')
+                    if t.llm_processing_time_seconds:
+                        print(f' ({t.llm_processing_time_seconds:.2f}s)', end='')
+                    if t.enhanced_text:
+                        print(f' - Enhanced text length: {len(t.enhanced_text)}', end='')
+                    if t.llm_error_message:
+                        print(f' - Error: {t.llm_error_message[:50]}...', end='')
+                    print()
             print()
     else:
         print('  (No audio files in database)')
