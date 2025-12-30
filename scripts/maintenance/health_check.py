@@ -88,7 +88,7 @@ class HealthChecker:
 
     def check_git_repository(self):
         """Check if in git repository"""
-        returncode, stdout, _ = self.run_command(['git', 'rev-parse', '--git-dir'])
+        returncode, _, _ = self.run_command(['git', 'rev-parse', '--git-dir'])
         passed = returncode == 0
 
         if passed:
@@ -179,9 +179,19 @@ class HealthChecker:
         # Check key packages
         key_packages = ['fastapi', 'uvicorn', 'sqlalchemy', 'openai-whisper', 'torch']
 
+        # Map package names to their import names
+        package_import_map = {
+            'openai-whisper': 'whisper',
+            'fastapi': 'fastapi',
+            'uvicorn': 'uvicorn',
+            'sqlalchemy': 'sqlalchemy',
+            'torch': 'torch'
+        }
+
         for package in key_packages:
             try:
-                __import__(package.replace('-', '_'))
+                import_name = package_import_map.get(package, package.replace('-', '_'))
+                __import__(import_name)
                 self.check(f"Package: {package}", True, "Installed")
             except ImportError:
                 self.check(f"Package: {package}", False, "Not installed")
@@ -361,7 +371,7 @@ class HealthChecker:
         self.check_frontend_server()
 
         # Summary
-        self.print_summary()
+        return self.print_summary()
 
     def print_summary(self):
         """Print health check summary"""
