@@ -76,10 +76,10 @@ src/
    - Create new Transcription entity (PENDING status)
    - Mark as PROCESSING, call WhisperService
    - Complete or fail based on result
-4. **Repository** → persists to SQLite via SQLAlchemy ORM
+4. **Repository** → persists to database (PostgreSQL in Docker, SQLite locally) via SQLAlchemy ORM
 5. **Frontend** → polls GET `/api/v1/transcriptions/{id}` for status updates
 
-### Database Schema (SQLite)
+### Database Schema (PostgreSQL for Docker, SQLite for Local)
 
 **1:Many relationship**: One AudioFile → Many Transcriptions
 
@@ -147,7 +147,7 @@ transcriptions
    - Uses LLM client to call local LLM (Ollama/LM Studio)
    - Applies enhancement prompts (grammar, formatting, filler removal)
    - Returns enhanced text
-6. **Repository** → persists updated transcription to SQLite
+6. **Repository** → persists updated transcription to database (PostgreSQL in Docker, SQLite locally)
 7. **Frontend** → displays dual text areas with original and enhanced text
 
 ## Development Commands
@@ -164,7 +164,7 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
 # Frontend setup
 cd src/presentation/frontend
@@ -228,6 +228,41 @@ black src/
 # Type checking
 mypy src/
 ```
+
+### Docker Deployment
+
+**IMPORTANT**: Docker deployment uses PostgreSQL for ALL environments (development and production), not SQLite.
+
+```bash
+# Quick start
+cp .env.docker .env
+python scripts/docker/run.py --build
+
+# Management scripts (scripts/docker/)
+python scripts/docker/build.py              # Build images
+python scripts/docker/run.py                # Start services
+python scripts/docker/stop.py               # Stop services
+python scripts/docker/logs.py --follow      # View logs
+python scripts/docker/shell.py backend      # Open shell in backend
+python scripts/docker/clean.py --all        # Clean all resources
+python scripts/docker/rebuild.py            # Rebuild and restart
+```
+
+**Docker Architecture**:
+- **postgres**: PostgreSQL 15 (port 5432 internal, volume: postgres-data)
+- **backend**: FastAPI + CUDA 12.8 (port 8001, volumes: whisper-uploads, whisper-cache, source code for hot-reload)
+- **frontend**: Angular ng serve (port 4200, volume: source code for hot-reload)
+
+**Hot-Reload**: Source code mounted as read-only volumes, changes auto-detected without rebuild
+
+**Model Preloading**: Set `PRELOAD_MODELS=tiny,base,small` in .env to download on startup
+
+**GPU Support**: Backend requires NVIDIA Container Toolkit, uses `nvidia` runtime with GPU capabilities
+- **IMPORTANT**: RTX 5090 (Blackwell architecture, sm_120) requires CUDA 12.8+ and PyTorch 2.7.0+
+- CUDA 11.8 will cause "CUDA kernel errors" with RTX 5090
+- The Dockerfile uses CUDA 12.8 base images for compatibility with latest GPUs
+
+**Volume Persistence**: All data (database, uploads, models) in named volumes, never in container images
 
 ## Key Implementation Patterns
 
@@ -367,7 +402,12 @@ switchTranscription(transcription: Transcription): void {
 
 ### CUDA & GPU Requirements
 
-- **Required**: NVIDIA GPU with CUDA 11.8+
+- **Required**: NVIDIA GPU with CUDA 12.8+
+- **PyTorch**: Version 2.7.0+ (for RTX 5090 sm_120 support)
+- **RTX 5090 Compatibility**: Blackwell architecture (compute capability 12.0) requires CUDA 12.8+
+  - CUDA 11.8 will fail with "CUDA kernel errors" on RTX 5090
+  - Docker deployment automatically uses CUDA 12.8 base images
+  - Local development requires manual PyTorch installation with cu128 wheel
 - **Verify GPU**: `python -c "import torch; print(torch.cuda.is_available())"`
 - Backend prints on startup: "GPU detected: NVIDIA GeForce RTX 5090"
 

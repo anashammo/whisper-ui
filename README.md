@@ -78,9 +78,12 @@ src/
 
 ### Software
 - **Python**: 3.9 or higher
-- **CUDA**: CUDA 11.8 or higher
+- **CUDA**: CUDA 12.8 or higher (required for RTX 5090 and newer GPUs)
+- **PyTorch**: 2.7.0+ (required for RTX 5090 sm_120 support)
 - **cuDNN**: Compatible with CUDA version
 - **Node.js**: 18+ (for Angular frontend)
+
+**Note**: RTX 5090 (Blackwell architecture) requires CUDA 12.8+ and PyTorch 2.7.0+ with sm_120 compiled binaries. Older CUDA versions (11.8) will cause "CUDA kernel errors".
 
 ## Installation
 
@@ -115,8 +118,19 @@ pip install -r requirements.txt
 
 ### 4. Install PyTorch with CUDA Support
 
+**For RTX 5090 and newer GPUs (CUDA 12.8):**
+```bash
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+```
+
+**For older GPUs (CUDA 11.8):**
 ```bash
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+```
+
+**Verify installation:**
+```bash
+python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
 ```
 
 ### 5. Install FFmpeg
@@ -244,6 +258,164 @@ python scripts/server/stop_frontend.py
 # Stop both servers at once
 python scripts/server/stop_all.py
 ```
+
+## Docker Deployment
+
+For production deployment or containerized development, use Docker:
+
+### Prerequisites
+
+- Docker Engine 20.10+ with Docker Compose
+- NVIDIA Container Toolkit (for GPU support)
+- 20GB+ free disk space
+
+### Quick Start
+
+```bash
+# 1. Configure environment variables
+cp .env.docker .env
+# Edit .env and set secure POSTGRES_PASSWORD
+
+# 2. Build and run all services
+python scripts/docker/run.py --build
+
+# 3. Access the application
+# Frontend: http://localhost:4200
+# Backend API: http://localhost:8001
+# API Docs: http://localhost:8001/docs
+```
+
+### Docker Management Scripts
+
+All Docker operations are managed via Python scripts in `scripts/docker/`:
+
+```bash
+# Build images
+python scripts/docker/build.py              # Build all services
+python scripts/docker/build.py --backend    # Build backend only
+python scripts/docker/build.py --frontend   # Build frontend only
+python scripts/docker/build.py --no-cache   # Clean build
+
+# Run services
+python scripts/docker/run.py                # Start all services
+python scripts/docker/run.py --build        # Build and start
+python scripts/docker/run.py --detach       # Run in background
+
+# View logs
+python scripts/docker/logs.py               # All services
+python scripts/docker/logs.py backend       # Backend only
+python scripts/docker/logs.py --follow      # Follow logs
+python scripts/docker/logs.py --tail 100    # Last 100 lines
+
+# Stop services
+python scripts/docker/stop.py               # Stop containers
+python scripts/docker/stop.py -v            # Stop and remove volumes (WARNING: deletes data)
+
+# Open shell in container
+python scripts/docker/shell.py backend      # Backend shell
+python scripts/docker/shell.py frontend     # Frontend shell
+python scripts/docker/shell.py postgres     # PostgreSQL shell
+
+# Clean up resources
+python scripts/docker/clean.py              # Remove containers
+python scripts/docker/clean.py --images     # Remove images
+python scripts/docker/clean.py --volumes    # Remove volumes (WARNING: deletes data)
+python scripts/docker/clean.py --all        # Remove everything (WARNING)
+
+# Rebuild and restart
+python scripts/docker/rebuild.py            # Stop, rebuild, and restart
+```
+
+### Docker Architecture
+
+The Docker deployment consists of three services:
+
+1. **PostgreSQL Database** (`postgres`)
+   - Image: `postgres:15-alpine`
+   - Port: 5432 (internal only)
+   - Volume: `postgres-data` → PostgreSQL data and logs
+
+2. **FastAPI Backend** (`backend`)
+   - GPU-accelerated with NVIDIA CUDA 12.8 (supports RTX 5090 and all older GPUs)
+   - Port: 8001 (exposed to host)
+   - Volumes:
+     - `whisper-uploads` → Audio files
+     - `whisper-cache` → Whisper model cache
+     - Source code mounted for hot-reload (development)
+
+3. **Angular Frontend** (`frontend`)
+   - Node.js 18 with ng serve
+   - Port: 4200 (exposed to host)
+   - Volume: Source code mounted for hot-reload (development)
+
+### Environment Configuration
+
+Edit `.env` to configure Docker services:
+
+```bash
+# PostgreSQL Database
+POSTGRES_USER=whisper
+POSTGRES_PASSWORD=change_this_secure_password_in_production
+POSTGRES_DB=whisper_db
+
+# Whisper Model Preloading
+PRELOAD_MODELS=base              # Models to download on startup (comma-separated: tiny,base,small)
+FORCE_DOWNLOAD=                  # Set to "true" to force re-download
+
+# Port Mapping
+BACKEND_PORT=8001
+FRONTEND_PORT=4200
+```
+
+### Hot-Reload Development
+
+Both backend and frontend support hot-reload without rebuilding containers:
+
+- **Backend**: Source code changes trigger Uvicorn auto-reload
+- **Frontend**: Angular watches for file changes and recompiles automatically
+
+No rebuild needed for code changes - containers automatically detect and apply updates.
+
+### Volume Persistence
+
+All persistent data is stored in Docker volumes (not in container images):
+
+- **postgres-data**: PostgreSQL database and logs
+- **whisper-uploads**: User-uploaded audio files
+- **whisper-cache**: Downloaded Whisper models (~1-3GB per model)
+
+Data persists across container restarts and rebuilds.
+
+### GPU Support
+
+The backend container requires NVIDIA GPU with Docker GPU support:
+
+```bash
+# Verify GPU availability in container
+python scripts/docker/shell.py backend
+python -c "import torch; print(torch.cuda.is_available())"  # Should print: True
+```
+
+If GPU is not detected:
+- Ensure NVIDIA Container Toolkit is installed
+- Verify `nvidia-smi` works on host
+- Check `docker-compose.yml` has correct GPU configuration
+
+### Model Management
+
+Whisper models are automatically downloaded on first container startup:
+
+```bash
+# Download specific models (set in .env)
+PRELOAD_MODELS=tiny,base,small
+
+# Force re-download models
+FORCE_DOWNLOAD=true python scripts/docker/run.py --build
+```
+
+Models are cached in `whisper-cache` volume and reused across rebuilds.
+
+For detailed Docker deployment guide, see [DOCKER.md](DOCKER.md).
 
 ## API Endpoints
 
@@ -683,8 +855,38 @@ mypy src/
 
 If you see "CUDA requested but not available":
 - Verify NVIDIA GPU drivers are installed
-- Ensure CUDA toolkit is installed
+- Ensure CUDA toolkit is installed (CUDA 12.8+ for RTX 5090)
 - Check PyTorch CUDA installation: `python -c "import torch; print(torch.cuda.is_available())"`
+
+### RTX 5090 CUDA Kernel Errors
+
+If you see "CUDA kernel errors" or "no kernel image available for device" with RTX 5090:
+
+**Root Cause**: RTX 5090 (Blackwell architecture, sm_120) requires CUDA 12.8+ and PyTorch 2.7.0+. CUDA 11.8 does not support this GPU.
+
+**Solutions**:
+1. **Update CUDA toolkit to 12.8+**:
+   - Download from https://developer.nvidia.com/cuda-downloads
+   - Install and restart system
+
+2. **Reinstall PyTorch with CUDA 12.8 support**:
+   ```bash
+   pip uninstall torch torchvision torchaudio
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+   ```
+
+3. **Verify PyTorch detects CUDA 12.8**:
+   ```bash
+   python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.version.cuda}')"
+   # Should show: PyTorch: 2.7.0+cu128, CUDA: 12.8
+   ```
+
+4. **Docker Users**: Rebuild with CUDA 12.8 base images
+   ```bash
+   python scripts/docker/rebuild.py --no-cache
+   ```
+
+**Note**: This issue only affects RTX 5090 and newer Blackwell GPUs. Older GPUs work fine with CUDA 11.8.
 
 ### Import Errors
 
