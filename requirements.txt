@@ -4,7 +4,6 @@ uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 
 # Whisper & ML
-openai-whisper
 torch
 torchaudio
 numpy
@@ -14,9 +13,10 @@ more-itertools
 # Database
 sqlalchemy==2.0.25
 alembic==1.13.1
+psycopg2-binary==2.9.9  # PostgreSQL adapter for Docker
 
 # Configuration
-pydantic==2.5.3
+pydantic==2.8.2
 pydantic-settings==2.1.0
 python-dotenv==1.0.0
 
@@ -27,7 +27,6 @@ aiofiles==23.2.1
 pytest==7.4.4
 pytest-asyncio==0.23.3
 pytest-cov==4.1.0
-httpx==0.26.0
 
 # Development
 black==23.12.1

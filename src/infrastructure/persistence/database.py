@@ -8,11 +8,14 @@ from ..config.settings import get_settings
 # Get settings
 settings = get_settings()
 
-# Create SQLAlchemy engine
+# Create SQLAlchemy engine with PostgreSQL-optimized configuration
 engine = create_engine(
     settings.database_url,
-    connect_args={"check_same_thread": False},  # Needed for SQLite
-    echo=settings.debug  # Log SQL queries in debug mode
+    echo=settings.debug,  # Log SQL queries in debug mode
+    # PostgreSQL connection pool settings
+    pool_pre_ping=True,  # Verify connections before using
+    pool_size=5,         # Number of connections to maintain
+    max_overflow=10      # Maximum additional connections
 )
 
 # Session factory
