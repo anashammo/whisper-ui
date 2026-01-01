@@ -11,6 +11,10 @@ import sys
 from pathlib import Path
 import whisper
 
+# Fix Unicode encoding for Windows console
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+
 # Available Whisper models
 AVAILABLE_MODELS = ["tiny", "base", "small", "medium", "large", "turbo"]
 DEFAULT_MODELS = ["base"]  # Default model to pre-download
@@ -21,16 +25,34 @@ CACHE_DIR = Path.home() / ".cache" / "whisper"
 
 def model_exists(model_name: str) -> bool:
     """Check if a Whisper model exists in cache."""
-    model_file = CACHE_DIR / f"{model_name}.pt"
-    exists = model_file.exists()
+    # Whisper uses versioned names: large -> large-v3, turbo -> large-v3-turbo
+    # Check for both versioned and non-versioned filenames
+    possible_names = [f"{model_name}.pt"]
 
-    if exists:
-        file_size_mb = model_file.stat().st_size / (1024 * 1024)
-        print(f"✓ Model '{model_name}' found in cache ({file_size_mb:.1f} MB)")
-    else:
-        print(f"✗ Model '{model_name}' not found in cache")
+    # Add versioned variants
+    if model_name == "large":
+        possible_names.extend(["large-v1.pt", "large-v2.pt", "large-v3.pt"])
+    elif model_name == "turbo":
+        possible_names.extend(["turbo.pt", "large-v3-turbo.pt"])
+    elif model_name == "medium":
+        possible_names.extend(["medium.en.pt"])
+    elif model_name == "small":
+        possible_names.extend(["small.en.pt"])
+    elif model_name == "base":
+        possible_names.extend(["base.en.pt"])
+    elif model_name == "tiny":
+        possible_names.extend(["tiny.en.pt"])
 
-    return exists
+    # Check if any variant exists
+    for variant in possible_names:
+        model_file = CACHE_DIR / variant
+        if model_file.exists():
+            file_size_mb = model_file.stat().st_size / (1024 * 1024)
+            print(f"✓ Model '{model_name}' found in cache as '{variant}' ({file_size_mb:.1f} MB)")
+            return True
+
+    print(f"✗ Model '{model_name}' not found in cache")
+    return False
 
 
 def download_model(model_name: str, force: bool = False) -> bool:

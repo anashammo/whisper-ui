@@ -1,6 +1,11 @@
 """Migration script to add model column to transcriptions table"""
 import sqlite3
+import sys
 import os
+
+# Fix Unicode encoding for Windows console
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
 
 # Database path
 home = os.path.expanduser("~")

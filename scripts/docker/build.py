@@ -4,6 +4,10 @@ import subprocess
 import sys
 import argparse
 
+# Fix Unicode encoding for Windows console
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+
 
 def run_command(cmd, description):
     """Run a shell command and handle errors"""

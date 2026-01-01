@@ -53,6 +53,10 @@ import whisper
 import sys
 import argparse
 
+# Fix Unicode encoding for Windows console
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+
 
 def download_model(model_name: str = "base"):
     """

@@ -2,6 +2,10 @@
 import sys
 from pathlib import Path
 
+# Fix Unicode encoding for Windows console
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+
 # Add project root to path (scripts/maintenance/ -> scripts/ -> project root)
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 

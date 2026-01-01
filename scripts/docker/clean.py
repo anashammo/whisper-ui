@@ -4,6 +4,10 @@ import subprocess
 import sys
 import argparse
 
+# Fix Unicode encoding for Windows console
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+
 
 def main():
     parser = argparse.ArgumentParser(description="Clean up Docker resources")
