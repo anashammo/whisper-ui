@@ -94,6 +94,9 @@ class WhisperService(SpeechRecognitionService):
         """
         Check if a model is already downloaded/cached locally.
 
+        Checks for both exact model names and known version variants
+        (e.g., "large" will match "large.pt", "large-v1.pt", "large-v2.pt", "large-v3.pt")
+
         Args:
             model_name: Name of the model to check
 
@@ -110,11 +113,40 @@ class WhisperService(SpeechRecognitionService):
             # On Unix, cache is in ~/.cache/whisper
             home = os.path.expanduser("~")
             cache_dir = os.path.join(home, ".cache", "whisper")
-            model_file = f"{model_name}.pt"
-            model_path = os.path.join(cache_dir, model_file)
-            exists = os.path.exists(model_path)
-            print(f"Checking model cache: {model_path} - exists: {exists}")
-            return exists
+
+            # Build list of possible model filenames (including version variants)
+            possible_names = [f"{model_name}.pt"]
+
+            # Add known version variants based on OpenAI Whisper versioning
+            if model_name == "large":
+                # Large model has v1, v2, v3 variants
+                possible_names.extend(["large-v1.pt", "large-v2.pt", "large-v3.pt"])
+            elif model_name == "turbo":
+                # Turbo model may be stored as turbo.pt or large-v3-turbo.pt
+                possible_names.extend(["turbo.pt", "large-v3-turbo.pt"])
+            elif model_name == "medium":
+                # Medium model may have .en variant
+                possible_names.extend(["medium.en.pt"])
+            elif model_name == "small":
+                # Small model may have .en variant
+                possible_names.extend(["small.en.pt"])
+            elif model_name == "base":
+                # Base model may have .en variant
+                possible_names.extend(["base.en.pt"])
+            elif model_name == "tiny":
+                # Tiny model may have .en variant
+                possible_names.extend(["tiny.en.pt"])
+
+            # Check if any variant exists
+            for model_file in possible_names:
+                model_path = os.path.join(cache_dir, model_file)
+                if os.path.exists(model_path):
+                    print(f"Model cache found: {model_path}")
+                    return True
+
+            print(f"Model '{model_name}' not found in cache (checked: {', '.join(possible_names)})")
+            return False
+
         except Exception as e:
             print(f"Error checking model cache: {e}")
             return False

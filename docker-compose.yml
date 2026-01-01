@@ -1,0 +1,118 @@
+services:
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: whisper-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-whisper}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-whisper_secure_password}
+      POSTGRES_DB: ${POSTGRES_DB:-whisper_db}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - whisper-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-whisper} -d ${POSTGRES_DB:-whisper_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Backend API Service
+  backend:
+    build:
+      context: .
+      dockerfile: src/presentation/api/Dockerfile
+    container_name: whisper-backend
+    # Load environment variables from backend .env file
+    env_file:
+      - ./src/presentation/api/.env
+    ports:
+      - "${BACKEND_PORT:-8001}:8001"
+    volumes:
+      # Hot-reload: Mount source code
+      - ./src:/app/src:ro
+      - ./scripts:/app/scripts:ro
+      - whisper-uploads:/app/uploads
+      - whisper-cache:/root/.cache/whisper
+    environment:
+      # Database configuration (PostgreSQL)
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-whisper}:${POSTGRES_PASSWORD:-whisper_secure_password}@postgres:5432/${POSTGRES_DB:-whisper_db}
+
+      # GPU configuration
+      - CUDA_VISIBLE_DEVICES=0
+      - WHISPER_DEVICE=cuda
+
+      # Model preload configuration
+      - PRELOAD_MODELS=${PRELOAD_MODELS:-base}
+      - FORCE_DOWNLOAD=${FORCE_DOWNLOAD:-}
+
+      # Application settings
+      - PYTHONUNBUFFERED=1
+      - API_HOST=0.0.0.0
+      - API_PORT=8001
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "
+      python3 /usr/local/bin/preload_models.py --models ${PRELOAD_MODELS:-base} ${FORCE_DOWNLOAD:+--force} &&
+      python3 -m uvicorn src.presentation.api.main:app --host 0.0.0.0 --port 8001 --reload
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - whisper-network
+
+  # Frontend Web Service
+  frontend:
+    build:
+      context: ./src/presentation/frontend
+      dockerfile: Dockerfile
+    container_name: whisper-frontend
+    ports:
+      - "${FRONTEND_PORT:-4200}:4200"
+    volumes:
+      # Hot-reload: Mount source code
+      - ./src/presentation/frontend/src:/app/src:ro
+      - ./src/presentation/frontend/angular.json:/app/angular.json:ro
+      - ./src/presentation/frontend/tsconfig.json:/app/tsconfig.json:ro
+      - ./src/presentation/frontend/tsconfig.app.json:/app/tsconfig.app.json:ro
+    environment:
+      - API_URL=http://localhost:8001/api/v1
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://0.0.0.0:4200/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - whisper-network
+
+volumes:
+  postgres-data:
+    driver: local
+  whisper-uploads:
+    driver: local
+  whisper-cache:
+    driver: local
+
+networks:
+  whisper-network:
+    driver: bridge

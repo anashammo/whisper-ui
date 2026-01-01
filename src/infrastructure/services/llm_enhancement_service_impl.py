@@ -6,8 +6,8 @@ domain interface using LangGraph and local LLM.
 from typing import Dict, Any, Optional
 
 from ...domain.services.llm_enhancement_service import LLMEnhancementService
-from ...presentation.agent.llm_client import LLMClient
-from ...presentation.agent.enhancement_agent import EnhancementAgent
+from ..llm.llm_client import LLMClient
+from ...application.enhancement.enhancement_agent import EnhancementAgent
 
 
 class LLMEnhancementServiceImpl(LLMEnhancementService):

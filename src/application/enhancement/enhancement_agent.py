@@ -5,7 +5,7 @@ using a local LLM.
 """
 from typing import Dict, Any, Optional, TypedDict
 from langgraph.graph import StateGraph, END
-from .llm_client import LLMClient
+from ...infrastructure.llm.llm_client import LLMClient
 from .prompts import ENHANCEMENT_SYSTEM_PROMPT, ENHANCEMENT_USER_PROMPT_TEMPLATE
 
 
