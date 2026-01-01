@@ -2,21 +2,34 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.pool import StaticPool
 from typing import Generator
 from ..config.settings import get_settings
 
 # Get settings
 settings = get_settings()
 
-# Create SQLAlchemy engine with PostgreSQL-optimized configuration
-engine = create_engine(
-    settings.database_url,
-    echo=settings.debug,  # Log SQL queries in debug mode
-    # PostgreSQL connection pool settings
-    pool_pre_ping=True,  # Verify connections before using
-    pool_size=5,         # Number of connections to maintain
-    max_overflow=10      # Maximum additional connections
-)
+# Configure engine based on database type
+# SQLite uses StaticPool (no connection pooling), PostgreSQL uses QueuePool
+if settings.database_url.startswith("sqlite"):
+    # SQLite configuration: StaticPool for single-threaded access
+    # check_same_thread=False allows use across threads with proper session management
+    engine = create_engine(
+        settings.database_url,
+        echo=settings.debug,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool
+    )
+else:
+    # PostgreSQL/MySQL/other databases: Use connection pooling
+    engine = create_engine(
+        settings.database_url,
+        echo=settings.debug,  # Log SQL queries in debug mode
+        # Connection pool settings (for PostgreSQL, MySQL, etc.)
+        pool_pre_ping=True,  # Verify connections before using
+        pool_size=5,         # Number of connections to maintain
+        max_overflow=10      # Maximum additional connections
+    )
 
 # Session factory
 SessionLocal = sessionmaker(

@@ -16,6 +16,9 @@ RUN --mount=type=cache,target=/root/.npm \
 # Copy application code
 COPY . .
 
+# Install wget for health check (not included in node:18-alpine by default)
+RUN apk add --no-cache wget
+
 # Expose Angular dev server port
 EXPOSE 4200
 

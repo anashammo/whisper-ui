@@ -33,7 +33,8 @@ def model_exists(model_name: str) -> bool:
     if model_name == "large":
         possible_names.extend(["large-v1.pt", "large-v2.pt", "large-v3.pt"])
     elif model_name == "turbo":
-        possible_names.extend(["turbo.pt", "large-v3-turbo.pt"])
+        # Whisper's turbo model caches as "large-v3-turbo.pt" only (not "turbo.pt")
+        possible_names.extend(["large-v3-turbo.pt"])
     elif model_name == "medium":
         possible_names.extend(["medium.en.pt"])
     elif model_name == "small":

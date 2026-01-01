@@ -35,8 +35,6 @@ services:
       - ./scripts:/app/scripts:ro
       - whisper-uploads:/app/uploads
       - whisper-cache:/root/.cache/whisper
-      # Mount backend .env file for runtime access
-      - ./src/presentation/api/.env:/app/.env:ro
     environment:
       # Database configuration (PostgreSQL)
       - DATABASE_URL=postgresql://${POSTGRES_USER:-whisper}:${POSTGRES_PASSWORD:-whisper_secure_password}@postgres:5432/${POSTGRES_DB:-whisper_db}
