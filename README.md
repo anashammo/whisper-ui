@@ -110,21 +110,47 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### 3. Install Dependencies
+### 3. Install UV Package Manager (Optional but Recommended)
+
+UV is 10-100x faster than pip for installing Python dependencies:
 
 ```bash
-pip install -r requirements.txt
+# Install UV
+python scripts/setup/install_uv.py
+
+# Verify installation
+uv --version
 ```
 
-### 4. Install PyTorch with CUDA Support
+### 4. Install Dependencies
+
+**Option A: Using UV (Recommended - 10-100x faster):**
+```bash
+uv pip install -r src/presentation/api/requirements.txt
+```
+
+**Option B: Using pip:**
+```bash
+pip install -r src/presentation/api/requirements.txt
+```
+
+### 5. Install PyTorch with CUDA Support
 
 **For RTX 5090 and newer GPUs (CUDA 12.8):**
 ```bash
+# With UV (recommended)
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# Or with pip
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 ```
 
 **For older GPUs (CUDA 11.8):**
 ```bash
+# With UV (recommended)
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# Or with pip
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
 
@@ -167,11 +193,13 @@ cd ../../..
 
 ### 8. Setup Environment Variables (Optional)
 
+**Backend configuration:**
 ```bash
-cp .env.example .env
+# Copy backend environment template
+cp src/presentation/api/.env.example src/presentation/api/.env
 ```
 
-Edit `.env` to configure:
+Edit `src/presentation/api/.env` to configure:
 - `WHISPER_MODEL`: Model size (default: base)
 - `WHISPER_DEVICE`: cuda or cpu (default: cuda)
 - `MAX_FILE_SIZE_MB`: Maximum upload size (default: 25)
@@ -180,6 +208,11 @@ Edit `.env` to configure:
 - `LLM_MODEL`: LLM model name (default: llama3)
 - `LLM_TIMEOUT_SECONDS`: Timeout for LLM requests (default: 60)
 - `LLM_TEMPERATURE`: LLM temperature 0.0-1.0 (default: 0.3)
+
+**Frontend configuration:**
+
+Frontend uses TypeScript environment files (`src/presentation/frontend/src/environments/environment.ts`).
+No .env file needed - API URL is configured in the environment.ts file.
 
 ### 9. Setup LLM Enhancement (Optional)
 
@@ -272,9 +305,9 @@ For production deployment or containerized development, use Docker:
 ### Quick Start
 
 ```bash
-# 1. Configure environment variables
-cp .env.docker .env
-# Edit .env and set secure POSTGRES_PASSWORD
+# 1. Configure backend environment variables
+cp src/presentation/api/.env.docker src/presentation/api/.env
+# Edit src/presentation/api/.env and set secure POSTGRES_PASSWORD
 
 # 2. Build and run all services
 python scripts/docker/run.py --build
@@ -350,7 +383,7 @@ The Docker deployment consists of three services:
 
 ### Environment Configuration
 
-Edit `.env` to configure Docker services:
+Edit `src/presentation/api/.env` to configure Docker services:
 
 ```bash
 # PostgreSQL Database
@@ -682,13 +715,18 @@ Whisper/
 │       ├── api/                  # FastAPI REST API
 │       │   ├── routers/          # API endpoints
 │       │   ├── schemas/          # Pydantic models
-│       │   └── dependencies.py   # Dependency injection
+│       │   ├── dependencies.py   # Dependency injection
+│       │   ├── Dockerfile        # Backend Docker image
+│       │   ├── requirements.txt  # Python dependencies
+│       │   ├── .env.example      # Backend env template (local)
+│       │   └── .env.docker       # Backend env template (Docker)
 │       └── frontend/             # Angular Web Application
 │           ├── src/              # Angular source code
 │           │   ├── app/          # Application modules
-│           │   └── environments/ # Environment configs
+│           │   └── environments/ # TypeScript environment configs
 │           ├── package.json      # NPM dependencies
-│           └── angular.json      # Angular configuration
+│           ├── angular.json      # Angular configuration
+│           └── Dockerfile        # Frontend Docker image
 ├── scripts/                       # Utility scripts
 │   ├── setup/                    # Setup & initialization
 │   │   ├── init_db.py            # Initialize database
@@ -710,9 +748,11 @@ Whisper/
 │       ├── migrate_add_model_column.py # Add model column
 │       └── migrate_add_processing_time.py # Add processing time
 ├── tests/                         # Tests
-├── requirements.txt               # Python dependencies
-├── .env.example                   # Environment template
+├── docker-compose.yml             # Docker orchestration
+├── .env.example                   # Root env template (backward compat)
 └── README.md                      # This file
+
+**Note**: Backend configuration files (Dockerfile, requirements.txt, .env) are now located in `src/presentation/api/` for better organization.
 ```
 
 ## Configuration
@@ -871,7 +911,12 @@ If you see "CUDA kernel errors" or "no kernel image available for device" with R
 
 2. **Reinstall PyTorch with CUDA 12.8 support**:
    ```bash
+   # Uninstall old version
    pip uninstall torch torchvision torchaudio
+
+   # Reinstall with CUDA 12.8 (using UV is faster)
+   uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+   # Or with pip:
    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
    ```
 
@@ -892,7 +937,9 @@ If you see "CUDA kernel errors" or "no kernel image available for device" with R
 
 If you encounter import errors:
 - Ensure virtual environment is activated
-- Verify all dependencies are installed: `pip install -r requirements.txt`
+- Verify all dependencies are installed:
+  - With UV: `uv pip install -r src/presentation/api/requirements.txt`
+  - With pip: `pip install -r src/presentation/api/requirements.txt`
 
 ### Database Errors
 

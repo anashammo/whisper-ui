@@ -162,8 +162,16 @@ venv\Scripts\activate
 # Linux/Mac:
 source venv/bin/activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Install UV package manager (optional but recommended - 10-100x faster)
+python scripts/setup/install_uv.py
+
+# Install dependencies (choose one method)
+# Option A: With UV (recommended)
+uv pip install -r src/presentation/api/requirements.txt
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# Option B: With pip
+pip install -r src/presentation/api/requirements.txt
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
 # Frontend setup
