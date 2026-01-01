@@ -16,25 +16,31 @@ if sys.platform == 'win32':
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.infrastructure.persistence.database import engine, SessionLocal
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 
 
 def upgrade():
     """Add LLM enhancement columns to transcriptions table"""
     print("Starting migration: Adding LLM enhancement columns...")
 
-    try:
-        with engine.begin() as conn:
-            # Check if columns already exist (idempotent migration)
-            result = conn.execute(
-                text("SELECT COUNT(*) FROM pragma_table_info('transcriptions') "
-                     "WHERE name='enable_llm_enhancement'")
-            )
-            column_exists = result.fetchone()[0] > 0
+    # Get database inspector to check existing columns
+    inspector = inspect(engine)
 
-            if column_exists:
-                print("WARNING: Columns already exist - migration already applied")
-                return
+    try:
+        # Check if the transcriptions table exists
+        if 'transcriptions' not in inspector.get_table_names():
+            print("ERROR: transcriptions table does not exist!")
+            print("Run 'python scripts/setup/init_db.py' first to create tables.")
+            return
+
+        # Check if columns already exist (idempotent migration)
+        columns = [col['name'] for col in inspector.get_columns('transcriptions')]
+
+        if 'enable_llm_enhancement' in columns:
+            print("WARNING: Columns already exist - migration already applied")
+            return
+
+        with engine.begin() as conn:
 
             # Add enable_llm_enhancement column
             print("Adding column: enable_llm_enhancement (BOOLEAN)...")
@@ -84,10 +90,17 @@ def downgrade():
     print("Rolling back migration: Removing LLM enhancement columns...")
 
     try:
-        with engine.begin() as conn:
-            # SQLite doesn't support DROP COLUMN in older versions
-            # We'll need to recreate the table without these columns
+        # Check database type
+        db_url = str(engine.url)
+
+        if 'sqlite' in db_url.lower():
             print("WARNING: SQLite doesn't support DROP COLUMN easily.")
+            print("To rollback, restore from backup or recreate database.")
+        elif 'postgresql' in db_url.lower():
+            print("PostgreSQL supports DROP COLUMN, but rollback not implemented.")
+            print("To rollback, manually drop columns or recreate database.")
+        else:
+            print(f"WARNING: Unsupported database type: {db_url}")
             print("To rollback, restore from backup or recreate database.")
 
     except Exception as e:
