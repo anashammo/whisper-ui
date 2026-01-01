@@ -1,3 +1,21 @@
+# ============================================================================
+# Python Dependencies for Whisper Transcription API
+# ============================================================================
+#
+# Installation (Recommended - 10-100x faster):
+#   uv pip install -r requirements.txt
+#
+# Installation (Fallback):
+#   pip install -r requirements.txt
+#
+# PyTorch with CUDA 12.8 (Install separately FIRST for RTX 5090 support):
+#   uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+#
+# Note: This project uses UV package manager for faster installations.
+#   Install UV: python scripts/setup/install_uv.py
+#   or: curl -LsSf https://astral.sh/uv/install.sh | sh
+# ============================================================================
+
 # Web Framework
 fastapi==0.109.0
 uvicorn[standard]==0.27.0

@@ -5,11 +5,13 @@ WORKDIR /app
 # Copy package files
 COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies with BuildKit cache mount for faster rebuilds
+RUN --mount=type=cache,target=/root/.npm \
+    npm install
 
-# Install Angular CLI globally
-RUN npm install -g @angular/cli
+# Install Angular CLI globally with cache mount
+RUN --mount=type=cache,target=/root/.npm \
+    npm install -g @angular/cli
 
 # Copy application code
 COPY . .

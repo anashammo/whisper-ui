@@ -1,35 +1,45 @@
 # ============================================================================
-# Stage 1: Builder - Install dependencies and build Python packages
+# Stage 1: Builder - Install dependencies with UV and BuildKit caching
 # ============================================================================
 FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu22.04 AS builder
 
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies for building Python packages
-RUN apt-get update && apt-get install -y \
+# Install system dependencies for building Python packages with BuildKit cache
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     python3.10 \
     python3.10-dev \
     python3-pip \
     git \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip, setuptools, wheel
-RUN python3 -m pip install --upgrade pip setuptools wheel
+# Install UV package manager (pinned version for reproducibility)
+COPY --from=ghcr.io/astral-sh/uv:0.9.21 /uv /uvx /bin/
+
+# Set UV environment variables for optimal Docker builds
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
 
 # Set working directory
 WORKDIR /build
 
-# Copy requirements file
-COPY requirements.txt .
+# Copy requirements file from backend folder
+COPY src/presentation/api/requirements.txt .
 
 # Install PyTorch with CUDA 12.8 support FIRST (before other packages)
 # This ensures CUDA-enabled PyTorch with RTX 5090 support (sm_120) is installed
-RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+# Using UV with BuildKit cache mount for fast installs
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 
-# Install remaining Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install remaining Python dependencies with UV and BuildKit cache
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --system -r requirements.txt
 
 # ============================================================================
 # Stage 2: Runtime - Minimal runtime image with GPU support
@@ -39,8 +49,10 @@ FROM nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
 # Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
+# Install runtime dependencies with BuildKit cache
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y \
     python3.10 \
     python3-pip \
     ffmpeg \
