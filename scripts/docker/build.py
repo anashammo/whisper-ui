@@ -42,7 +42,7 @@ def main():
         cmd = ["docker", "build", "-t", "whisper-backend"]
         if args.no_cache:
             cmd.append("--no-cache")
-        cmd.append(".")
+        cmd.extend(["-f", "src/presentation/api/Dockerfile", "."])
 
         run_command(cmd, "Building backend image")
 
