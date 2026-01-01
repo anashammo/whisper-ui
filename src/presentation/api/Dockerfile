@@ -23,7 +23,8 @@ COPY --from=ghcr.io/astral-sh/uv:0.9.21 /uv /uvx /bin/
 
 # Set UV environment variables for optimal Docker builds
 ENV UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy
+    UV_LINK_MODE=copy \
+    UV_HTTP_TIMEOUT=300
 
 # Set working directory
 WORKDIR /build
