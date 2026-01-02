@@ -15,8 +15,9 @@ class AudioUploadDTO:
     file_size: int
     mime_type: str
     language: Optional[str] = None
-    model: Optional[str] = "base"  # Whisper model: tiny, base, small, medium, large
+    model: Optional[str] = "base"  # Whisper model: tiny, base, small, medium, large, turbo
     enable_llm_enhancement: bool = False  # Whether to enable LLM enhancement for this transcription
+    vad_filter: bool = False  # Whether to enable Voice Activity Detection (filters silence)
 
     def __post_init__(self):
         """Validate DTO after initialization"""

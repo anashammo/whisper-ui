@@ -33,6 +33,9 @@ class TranscriptionDTO:
     llm_enhancement_status: Optional[str] = None
     llm_error_message: Optional[str] = None
 
+    # Voice Activity Detection (VAD) field
+    vad_filter_used: bool = False  # Whether VAD was enabled during transcription
+
     @classmethod
     def from_entity(cls, transcription):
         """
@@ -63,5 +66,7 @@ class TranscriptionDTO:
             enhanced_text=transcription.enhanced_text,
             llm_processing_time_seconds=transcription.llm_processing_time_seconds,
             llm_enhancement_status=transcription.llm_enhancement_status,
-            llm_error_message=transcription.llm_error_message
+            llm_error_message=transcription.llm_error_message,
+            # VAD field
+            vad_filter_used=transcription.vad_filter_used
         )

@@ -50,10 +50,12 @@ You are an expert Senior Software Engineer and DevOps Specialist acting as an au
 
 ## Project Overview
 
-A GPU-accelerated voice-to-text transcription system using OpenAI Whisper with FastAPI backend and Angular frontend. Supports multiple model transcriptions per audio file (tiny/base/small/medium/large/turbo) with real-time progress tracking, grouped history view, and LLM-based transcription enhancement.
+A GPU-accelerated voice-to-text transcription system using **faster-whisper** (CTranslate2 backend) with FastAPI backend and Angular frontend. Supports multiple model transcriptions per audio file (tiny/base/small/medium/large/turbo) with real-time progress tracking, grouped history view, and LLM-based transcription enhancement.
 
 **Key Features**:
 - Users can upload audio once and transcribe with multiple Whisper models to compare accuracy/speed tradeoffs
+- **Up to 4x faster inference** compared to OpenAI Whisper using CTranslate2 optimization
+- **Voice Activity Detection (VAD)** using Silero VAD to filter silence and improve accuracy
 - Transcriptions can be enhanced with local LLM (Ollama/LM Studio) for grammar correction, formatting, and filler removal
 - Transcriptions are displayed ordered by model size (smallest to largest)
 - Dual text display shows original Whisper and LLM-enhanced versions side-by-side
@@ -97,7 +99,7 @@ src/
 │   ├── persistence/
 │   │   ├── models/            # SQLAlchemy ORM models (NOT domain entities)
 │   │   └── repositories/      # SQLiteTranscriptionRepository implements domain interfaces
-│   ├── services/              # WhisperService, LLMEnhancementServiceImpl
+│   ├── services/              # FasterWhisperService, LLMEnhancementServiceImpl
 │   └── storage/               # LocalFileStorage for audio files
 │
 └── presentation/
@@ -120,7 +122,7 @@ src/
    - Fetch AudioFile entity from repository
    - Check for duplicate transcriptions (same model)
    - Create new Transcription entity (PENDING status)
-   - Mark as PROCESSING, call WhisperService
+   - Mark as PROCESSING, call FasterWhisperService
    - Complete or fail based on result
 4. **Repository** → persists to database (PostgreSQL in Docker, SQLite locally) via SQLAlchemy ORM
 5. **Frontend** → polls GET `/api/v1/transcriptions/{id}` for status updates
@@ -153,6 +155,9 @@ transcriptions
   - llm_processing_time_seconds (float, nullable)
   - llm_enhancement_status (varchar, nullable: processing/completed/failed)
   - llm_error_message (text, nullable)
+
+  # Voice Activity Detection (VAD) field (added January 2026)
+  - vad_filter_used (boolean, default: false)
 ```
 
 **UI Features**:
@@ -164,6 +169,7 @@ transcriptions
 - Read-only transcription textareas prevent accidental editing
 - "Enhance with LLM" button for completed transcriptions that opted in
 - LLM enhancement checkbox in upload/recording/re-transcription forms
+- VAD (Voice Activity Detection) checkbox in upload/recording/re-transcription forms
 - LLM enhancement status badges in both History and Details views (color-coded: green=completed, blue=processing, red=failed, orange=pending)
 - Enhanced text preview in History view cards (when available)
 - **Audio playback and download**:
@@ -261,13 +267,9 @@ python scripts/maintenance/cleanup_orphaned_transcriptions.py
 ### Model Management
 
 ```bash
-# Download Whisper models (cached in ~/.cache/whisper/)
-python scripts/setup/download_whisper_model.py tiny
-python scripts/setup/download_whisper_model.py base
-python scripts/setup/download_whisper_model.py small
-python scripts/setup/download_whisper_model.py medium
-python scripts/setup/download_whisper_model.py large
-python scripts/setup/download_whisper_model.py turbo
+# Download Whisper models (cached in ~/.cache/huggingface/)
+# Models are automatically downloaded on first use by faster-whisper
+# Docker preloads models via PRELOAD_MODELS environment variable
 ```
 
 ### Testing & Code Quality
@@ -304,7 +306,7 @@ python scripts/docker/rebuild.py            # Rebuild and restart
 
 **Docker Architecture**:
 - **postgres**: PostgreSQL 15 (port 5432 internal, volume: postgres-data)
-- **backend**: FastAPI + CUDA 12.8 (port 8001, volumes: whisper-uploads, whisper-cache, source code for hot-reload)
+- **backend**: FastAPI + CUDA 12.8 (port 8001, volumes: whisper-uploads, huggingface-cache, source code for hot-reload)
 - **frontend**: Angular ng serve (port 4200, volume: source code for hot-reload)
 
 **Hot-Reload**: Source code mounted as read-only volumes, changes auto-detected without rebuild
@@ -327,17 +329,17 @@ python scripts/docker/rebuild.py            # Rebuild and restart
 **Singletons** (loaded once, reused across requests):
 ```python
 @lru_cache()
-def get_whisper_service() -> WhisperService:
+def get_whisper_service() -> FasterWhisperService:
     # Model loaded once, stays in GPU memory
     settings = get_settings()
-    return WhisperService(settings)
+    return FasterWhisperService(settings)
 ```
 
 **Per-request** (new instance per request):
 ```python
 def get_transcribe_audio_use_case(
     db: Session = Depends(get_db),
-    whisper_service: WhisperService = Depends(get_whisper_service),
+    whisper_service: FasterWhisperService = Depends(get_whisper_service),
     file_storage: LocalFileStorage = Depends(get_file_storage),
     settings: Settings = Depends(get_settings)
 ) -> TranscribeAudioUseCase:

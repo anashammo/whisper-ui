@@ -15,7 +15,9 @@ class SpeechRecognitionService(ABC):
     async def transcribe(
         self,
         audio_file_path: str,
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        model_name: str = "base",
+        vad_filter: bool = False
     ) -> Dict[str, any]:
         """
         Transcribe audio file to text.
@@ -24,12 +26,15 @@ class SpeechRecognitionService(ABC):
             audio_file_path: Path to the audio file on disk
             language: Optional language code (e.g., 'en', 'es', 'fr')
                      If None, language will be auto-detected
+            model_name: Model to use for transcription (tiny, base, small, medium, large, turbo)
+            vad_filter: Whether to enable Voice Activity Detection to filter silence
 
         Returns:
             Dictionary containing:
                 - text (str): Transcribed text
                 - language (str): Detected or specified language code
                 - duration (float): Audio duration in seconds
+                - model (str): Model used for transcription
 
         Raises:
             TranscriptionError: If transcription fails

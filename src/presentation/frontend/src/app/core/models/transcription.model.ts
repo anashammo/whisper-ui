@@ -22,6 +22,9 @@ export interface Transcription {
   llm_processing_time_seconds: number | null;
   llm_enhancement_status: string | null;
   llm_error_message: string | null;
+
+  // Voice Activity Detection (VAD) field
+  vad_filter_used: boolean;
 }
 
 /**
