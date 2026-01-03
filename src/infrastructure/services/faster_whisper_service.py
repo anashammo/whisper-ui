@@ -1,7 +1,7 @@
 """faster-whisper service implementation with GPU acceleration and VAD support"""
 import torch
 from faster_whisper import WhisperModel
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import asyncio
 from functools import partial
 import os
@@ -243,7 +243,7 @@ class FasterWhisperService(SpeechRecognitionService):
         language: Optional[str] = None,
         model_name: str = "base",
         vad_filter: bool = False
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Transcribe audio file using faster-whisper with optional VAD.
 
@@ -294,7 +294,7 @@ class FasterWhisperService(SpeechRecognitionService):
         language: Optional[str],
         model: WhisperModel,
         vad_filter: bool
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Synchronous transcription method (runs in thread pool).
 
@@ -376,7 +376,7 @@ class FasterWhisperService(SpeechRecognitionService):
         """
         return get_audio_duration(audio_file_path)
 
-    def get_model_info(self) -> Dict[str, any]:
+    def get_model_info(self) -> Dict[str, Any]:
         """
         Get information about the service configuration.
 

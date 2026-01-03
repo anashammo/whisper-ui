@@ -143,6 +143,7 @@ Documentation drift is a **bug**.
 ### 9. Scripts & Automation
 - Use `scripts/` for:
   - Server management
+  - Docker management
   - Maintenance
   - Reusable tooling
 - Create or enhance scripts when reuse appears
