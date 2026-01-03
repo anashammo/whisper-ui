@@ -1,6 +1,6 @@
 """Speech recognition service interface - Domain layer contract"""
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 class SpeechRecognitionService(ABC):
@@ -18,7 +18,7 @@ class SpeechRecognitionService(ABC):
         language: Optional[str] = None,
         model_name: str = "base",
         vad_filter: bool = False
-    ) -> Dict[str, any]:
+    ) -> Dict[str, Any]:
         """
         Transcribe audio file to text.
 
@@ -61,5 +61,22 @@ class SpeechRecognitionService(ABC):
 
         Returns:
             True if language is supported, False otherwise
+        """
+        pass
+
+    @abstractmethod
+    def get_audio_duration(self, audio_file_path: str) -> float:
+        """
+        Extract audio duration from file.
+
+        Args:
+            audio_file_path: Path to the audio file
+
+        Returns:
+            Duration in seconds
+
+        Raises:
+            FileNotFoundError: If audio file not found
+            Exception: If audio file cannot be loaded
         """
         pass

@@ -360,6 +360,22 @@ class FasterWhisperService(SpeechRecognitionService):
         """
         return language_code in SUPPORTED_LANGUAGES
 
+    def get_audio_duration(self, audio_file_path: str) -> float:
+        """
+        Extract audio duration from file using PyAV.
+
+        Args:
+            audio_file_path: Path to the audio file
+
+        Returns:
+            Duration in seconds
+
+        Raises:
+            FileNotFoundError: If audio file not found
+            Exception: If audio file cannot be loaded
+        """
+        return get_audio_duration(audio_file_path)
+
     def get_model_info(self) -> Dict[str, any]:
         """
         Get information about the service configuration.

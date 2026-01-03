@@ -13,7 +13,6 @@ from ...domain.services.llm_enhancement_service import LLMEnhancementService
 from ..interfaces.file_storage_interface import FileStorageInterface
 from ..dto.audio_upload_dto import AudioUploadDTO
 from ..dto.transcription_dto import TranscriptionDTO
-from ...infrastructure.services.faster_whisper_service import get_audio_duration
 
 
 class TranscribeAudioUseCase:
@@ -105,7 +104,7 @@ class TranscribeAudioUseCase:
             # Log file path for debugging
             print(f"Extracting duration from: {file_path}")
 
-            duration = get_audio_duration(file_path)
+            duration = self.speech_service.get_audio_duration(file_path)
             audio_file.duration_seconds = duration
 
             # Validate duration

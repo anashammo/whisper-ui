@@ -217,9 +217,15 @@ text = " ".join(segment.text for segment in segments)
 - [x] Document VAD feature
 - [x] Update CUDA version references
 
-### 8.2 Update README.md
-- [ ] Add VAD feature to feature list (optional - user can request)
-- [ ] Update Docker CUDA version information (optional - user can request)
+### 8.2 Update README.md (REQUIRED)
+- [ ] Add VAD feature to feature list
+  - Document VAD availability and how to enable it (checkbox in upload/re-transcription forms)
+  - Note that VAD uses Silero VAD to filter silence and improve accuracy
+  - Mention potential performance trade-offs (see FASTER_WHISPER_PERFORMANCE_PLAN.md)
+- [ ] Update CUDA/PyTorch version requirements
+  - CUDA 12.8+ required for RTX 5090 (Blackwell architecture, sm_120)
+  - PyTorch 2.7.0+ with cu128 wheels
+  - Note: CUDA 11.8/12.6 will cause "CUDA kernel errors" on RTX 5090
 
 ### 8.3 Remove Old Files
 - [x] Delete `src/infrastructure/services/whisper_service.py` (replaced)
