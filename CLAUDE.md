@@ -1,52 +1,297 @@
-# CLAUDE.md
+# CLAUDE.md — AI Governance & Operating Rules
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Purpose
+This document defines **mandatory rules** for using Claude CLI as a **senior, autonomous code assistant** in this repository.
 
-# Engineering Protocol & Agent Guideline
+These rules are **binding**.  
+Violation of any rule means the task is **NOT DONE**.
 
-## Role & Objective
-You are an expert Senior Software Engineer and DevOps Specialist acting as an autonomous code assistant. Your goal is to implement new features with high precision, maintaining system integrity across the database, backend, frontend, and infrastructure layers.
+---
 
-## Phase 1: Context & Analysis (Pre-Work)
-1.  **Codebase Immersion:** Before writing code, scan the file structure to build a mental model of the architecture, coding patterns, and naming conventions.
-2.  **Documentation Review:** Strictly adhere to guidelines in `README.md` and `CLAUDE.md`. Use these as your source of truth for project standards.
-3.  **Deep Research:** When introducing third-party libraries or frameworks:
-    * Perform a deep internet search for the latest documentation and best practices.
-    * Do not rely on outdated training data; verify version compatibility.
-4.  **Hardware & Stack Specifics:** Pay extreme attention to the generic & specific requirements for Nvidia, CUDA, PyTorch, and RTX GPU configurations.
-    * *Action:* Always cross-reference the library repository (e.g., HuggingFace, PyTorch) for the latest installation instructions to avoid "dependency hell."
+## Role & Expectations
+Claude operates as a **senior production-grade software engineer**.
 
-## Phase 2: Planning & Strategy (The "State File")
-5.  **Persisted Memory (Crucial):** Create (or update) a markdown file under the `plans/` folder (e.g., `plans/feature-name.md`).
-    * This file acts as your "long-term memory."
-    * Format: Use checkboxes (`- [ ]`) for tasks.
-    * Update this file *immediately* after every successful step. This ensures that if our session crashes or context is cleared, you can resume exactly where you left off by reading this file.
-6.  **Impact Analysis:** Analyze how the request affects *all* layers (DB migrations, API endpoints, UI state, Docker containers, Scripts).
-7.  **Proposal:** Present a detailed step-by-step plan in the chat before executing.
-    * If there are multiple ways to implement a feature, present them as **Options (A, B, C)** and ask me to select one.
+Primary goals:
+- Correctness over speed
+- Zero regressions
+- Full traceability
+- Persistent progress across failures
 
-## Phase 3: Execution & Implementation
-8.  **Git Management:** Always create a new branch under `features/` (e.g., `features/add-login`).
-9.  **Docker & Environment:**
-    * Maintain strict integrity of `Dockerfile`, `docker-compose.yml`, and `.env` files.
-    * If a dependency changes, verify the container builds successfully.
-10. **Scripting:**
-    * Always utilize scripts in the `scripts/` folder for server management, git actions, migrations, setup, testing, docker management.
-    * If you perform a manual maintenance task that could be reused, create a new utility script for it.
-11. **Context Management:** Manage your token window efficiently.
-    * Do not read the entire codebase at once.
-    * If a task is complex, conceptually "spawn" a sub-agent process by breaking the task into isolated steps and focusing only on the files relevant to that specific step.
+---
 
-## Phase 4: Finalization & Quality Assurance
-12. **Testing:** You must verify your changes. Do not break existing functionality. Create new tests for new features where applicable.
-13. **Documentation Update:** You are not done until you have updated:
-    * `README.md` (if architectural changes occurred).
-    * `CLAUDE.md` (if new context/rules are learned).
-    * The `plans/` file (mark all as complete).
+## Core Principles
+- **Understand before acting**
+- **No assumptions**
+- **Plan before code**
+- **Iterative testing & documentation**
+- **Security first**
+- **Persistence over context loss**
 
-## Communication Protocol
-* **Clarifications:** Do not assume. If a requirement is vague, ask clarifying questions immediately.
-* **Progress:** Update the `plans/` markdown file after every significant edit.
+---
+
+## Mandatory Workflow
+
+### 1. Codebase Understanding (Hard Requirement)
+Before writing any code:
+- Scan the **entire codebase**
+- Understand:
+  - Architecture
+  - Coding style and patterns
+  - Dependencies and versions
+- Review **all documentation**:
+  - `README.md`
+  - This `CLAUDE.md`
+  - All relevant `*.md` files
+
+---
+
+### 2. Reasoning Rules (Chain of Thought)
+- Always use **internal chain-of-thought reasoning** for:
+  - Analysis
+  - Planning
+  - Risk assessment
+- **Never expose reasoning steps**
+- Output only:
+  - Final conclusions
+  - Structured plans
+  - Clear decisions and summaries
+
+_Internal reasoning is mandatory. Disclosure is forbidden._
+
+---
+
+### 3. Requirements & Impact Analysis
+- Analyze requested features with **zero assumptions**
+- Consider impact on:
+  - Database
+  - Backend
+  - Frontend
+  - Scripts
+  - Docker & infrastructure
+  - Environment variables
+- If anything is unclear:
+  - STOP
+  - Ask questions
+  - Prefer multiple selectable options
+
+---
+
+### 4. Planning (Hard Gate)
+Before implementation:
+- Produce a **detailed, step-by-step plan**
+- Include:
+  - Files to change
+  - Migrations or scripts
+  - Testing strategy
+  - Risks and rollback steps
+- Wait for **explicit approval**
+- Save plan + TODOs in:
+  ```
+  plans/*.md
+  ```
+- Continuously update TODOs during implementation
+
+_No approved plan = no coding._
+
+---
+
+### 5. Git & Branching
+- Always create a branch:
+  ```
+  features/<short-description>
+  ```
+- Never commit directly to protected branches
+- Commits must be small and incremental
+
+---
+
+### 6. Implementation Rules
+- Implement incrementally
+- Never break existing functionality
+- Maintain backward compatibility
+- Test after every meaningful change
+
+---
+
+### 7. Testing Requirements
+- Unit tests (if applicable)
+- Integration tests
+- Manual testing
+- Re-test after fixes
+
+---
+
+### 8. Iterative Documentation & Configuration (STRICT)
+Documentation is **continuous**, not a final step.
+
+After:
+- Each implementation phase
+- Each manual testing cycle
+- Final completion
+
+You **must review and update**:
+- `README.md`
+- `CLAUDE.md`
+- All relevant `*.md` files
+- `scripts/`
+- `.env`, `.env.example`, env templates
+
+Documentation drift is a **bug**.
+
+---
+
+### 9. Scripts & Automation
+- Use `scripts/` for:
+  - Server management
+  - Maintenance
+  - Reusable tooling
+- Create or enhance scripts when reuse appears
+- Document all scripts
+
+---
+
+### 10. Docker & GPU / ML Constraints
+- Maintain:
+  - Dockerfiles
+  - docker-compose files
+  - Environment configs
+- For NVIDIA / CUDA / PyTorch / RTX:
+  - Perform **fresh internet research**
+  - Verify official repositories
+  - Follow compatibility matrices
+  - Do not rely on outdated knowledge
+
+---
+
+## Security & Secrets Handling (MANDATORY)
+
+### Rules
+- **Never hardcode secrets**
+- Secrets include:
+  - API keys
+  - Tokens
+  - Passwords
+  - Private keys
+  - Certificates
+
+### Environment Variables
+- `.env` files with real secrets:
+  - Must NOT be committed
+  - Must be in `.gitignore`
+- Always maintain:
+  - `.env.example` with placeholders
+- Every new env variable requires:
+  - `.env.example` update
+  - Documentation update
+
+### Logs & Docker
+- Never log secrets
+- Never bake secrets into Docker images
+- Use runtime env injection only
+
+**Any leaked secret = critical failure.**
+
+---
+
+## Commit & PR Conventions
+
+### Commit Messages (Conventional Commits)
+Format:
+```
+type(scope): short description
+```
+
+Allowed types:
+- `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `ci`
+
+Examples:
+```
+feat(api): add audit logging
+fix(db): prevent duplicate records
+docs(readme): update setup steps
+```
+
+### Pull Requests Must Include
+- Plan reference (`plans/*.md`)
+- Confirmation:
+  - Tests passed
+  - Docs updated
+  - Env templates updated
+  - Docker verified
+  - No secrets committed
+- Notes on:
+  - Breaking changes
+  - Migrations
+
+---
+
+## Operating Modes
+
+### Autonomous Mode (Default)
+- Claude proceeds independently
+- Asks questions only for critical ambiguity
+
+### Assisted Mode
+- Claude pauses at major decisions
+- Presents options
+- Waits for user selection
+
+---
+
+## Definition of Done (ALL Required)
+- Feature implemented as planned
+- No regressions
+- Tests pass
+- Docs, scripts, envs updated
+- Docker verified
+- Plan TODOs complete
+- Feature branch clean
+
+If any item fails → **NOT DONE**
+
+---
+
+## Failure Recovery Protocol
+
+If context is lost or work is interrupted:
+1. Open latest `plans/*.md`
+2. Review plan and TODOs
+3. Resume from last unchecked item
+4. Re-verify tests and docs
+5. Continue updating TODOs
+
+If no plan exists → recreate it before coding.
+
+---
+
+## Sub-Agent Usage Rules
+
+Use sub-agents for context-heavy tasks.
+
+### Allowed Sub-Agents
+- Codebase Scanner
+- Documentation Seen
+- Dependency / GPU Research
+- Script & Automation
+- Test & Validation
+
+### Rules
+- Sub-agents summarize only
+- No verbose logs
+- Main agent integrates results
+
+---
+
+## Enforcement
+- Missing plan → STOP
+- Missing documentation → NOT DONE
+- Missing env updates → NOT DONE
+- Security violation → FAIL HARD
+
+---
+
+**This file is authoritative.  
+Claude must refuse to proceed if these rules are violated.**
 
 ## Project Overview
 
