@@ -1,81 +1,101 @@
 #!/usr/bin/env python3
 """
-Whisper Model Pre-Download Script for Docker
+faster-whisper Model Pre-Download Script for Docker
 
-Downloads Whisper models to cache volume on container startup.
+Downloads faster-whisper models from HuggingFace Hub to cache volume on container startup.
 Smart caching: Only downloads missing models unless --force is used.
 """
 import argparse
 import os
 import sys
 from pathlib import Path
-import whisper
 
 # Fix Unicode encoding for Windows console
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
 
-# Available Whisper models
+# Available faster-whisper models
 AVAILABLE_MODELS = ["tiny", "base", "small", "medium", "large", "turbo"]
 DEFAULT_MODELS = ["base"]  # Default model to pre-download
 
-# Cache directory (will be volume-mounted in Docker)
-CACHE_DIR = Path.home() / ".cache" / "whisper"
+# Cache directory for HuggingFace Hub (faster-whisper uses this)
+CACHE_DIR = Path.home() / ".cache" / "huggingface"
+
+
+def get_repo_id(model_name: str) -> str:
+    """Get HuggingFace repo ID for a model name."""
+    repo_map = {
+        "tiny": "Systran/faster-whisper-tiny",
+        "tiny.en": "Systran/faster-whisper-tiny.en",
+        "base": "Systran/faster-whisper-base",
+        "base.en": "Systran/faster-whisper-base.en",
+        "small": "Systran/faster-whisper-small",
+        "small.en": "Systran/faster-whisper-small.en",
+        "medium": "Systran/faster-whisper-medium",
+        "medium.en": "Systran/faster-whisper-medium.en",
+        "large": "Systran/faster-whisper-large-v3",
+        "large-v1": "Systran/faster-whisper-large-v1",
+        "large-v2": "Systran/faster-whisper-large-v2",
+        "large-v3": "Systran/faster-whisper-large-v3",
+        "turbo": "deepdml/faster-whisper-large-v3-turbo-ct2",
+        "large-v3-turbo": "deepdml/faster-whisper-large-v3-turbo-ct2",
+    }
+    return repo_map.get(model_name, f"Systran/faster-whisper-{model_name}")
 
 
 def model_exists(model_name: str) -> bool:
-    """Check if a Whisper model exists in cache."""
-    # Whisper uses versioned names: large -> large-v3, turbo -> large-v3-turbo
-    # Check for both versioned and non-versioned filenames
-    possible_names = [f"{model_name}.pt"]
+    """Check if a faster-whisper model exists in HuggingFace cache."""
+    try:
+        from huggingface_hub import try_to_load_from_cache
 
-    # Add versioned variants
-    if model_name == "large":
-        possible_names.extend(["large-v1.pt", "large-v2.pt", "large-v3.pt"])
-    elif model_name == "turbo":
-        # Whisper's turbo model caches as "large-v3-turbo.pt" only (not "turbo.pt")
-        possible_names.extend(["large-v3-turbo.pt"])
-    elif model_name == "medium":
-        possible_names.extend(["medium.en.pt"])
-    elif model_name == "small":
-        possible_names.extend(["small.en.pt"])
-    elif model_name == "base":
-        possible_names.extend(["base.en.pt"])
-    elif model_name == "tiny":
-        possible_names.extend(["tiny.en.pt"])
+        repo_id = get_repo_id(model_name)
 
-    # Check if any variant exists
-    for variant in possible_names:
-        model_file = CACHE_DIR / variant
-        if model_file.exists():
-            file_size_mb = model_file.stat().st_size / (1024 * 1024)
-            print(f"✓ Model '{model_name}' found in cache as '{variant}' ({file_size_mb:.1f} MB)")
+        # Check if model.bin exists in cache (main CTranslate2 model file)
+        cached = try_to_load_from_cache(repo_id, "model.bin")
+        if cached is not None:
+            # Get file size
+            file_size_mb = os.path.getsize(cached) / (1024 * 1024)
+            print(f"  Model '{model_name}' found in cache ({file_size_mb:.1f} MB)")
             return True
 
-    print(f"✗ Model '{model_name}' not found in cache")
-    return False
+        print(f"  Model '{model_name}' not found in cache")
+        return False
+
+    except Exception as e:
+        print(f"  Error checking cache for '{model_name}': {e}")
+        return False
 
 
 def download_model(model_name: str, force: bool = False) -> bool:
-    """Download a Whisper model if missing or force is True."""
+    """Download a faster-whisper model if missing or force is True."""
     if not force and model_exists(model_name):
-        print(f"⊳ Skipping '{model_name}' (already cached, use --force to re-download)")
+        print(f"  Skipping '{model_name}' (already cached, use --force to re-download)")
         return True
 
     try:
-        print(f"⬇ Downloading model '{model_name}'...")
-        whisper.load_model(model_name, download_root=str(CACHE_DIR))
-        print(f"✓ Successfully downloaded '{model_name}'")
+        from faster_whisper import WhisperModel
+
+        print(f"  Downloading model '{model_name}' from HuggingFace Hub...")
+
+        # Loading the model triggers download if not cached
+        # Use CPU and int8 to minimize memory during preload
+        model = WhisperModel(model_name, device="cpu", compute_type="int8")
+
+        # Release model from memory
+        del model
+
+        print(f"  Successfully downloaded '{model_name}'")
         return True
+
     except Exception as e:
-        print(f"✗ Failed to download '{model_name}': {e}")
+        print(f"  Failed to download '{model_name}': {e}")
         return False
 
 
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description="Pre-download Whisper models to cache volume"
+        description="Pre-download faster-whisper models to HuggingFace cache volume"
     )
     parser.add_argument(
         "--models",
@@ -101,7 +121,7 @@ def main():
     models_to_download = AVAILABLE_MODELS if args.all else args.models
 
     print("=" * 60)
-    print("Whisper Model Pre-Download Script")
+    print("faster-whisper Model Pre-Download Script")
     print("=" * 60)
     print(f"Cache directory: {CACHE_DIR}")
     print(f"Models to process: {', '.join(models_to_download)}")
@@ -117,6 +137,7 @@ def main():
     failure_count = 0
 
     for model in models_to_download:
+        print(f"Processing '{model}':")
         if download_model(model, force=args.force):
             success_count += 1
         else:

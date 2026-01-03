@@ -90,6 +90,10 @@
           <span class="label">Enhanced with LLM:</span>
           <span class="value">{{ activeTranscription.enable_llm_enhancement ? 'Yes' : 'No' }}</span>
         </div>
+        <div class="metadata-item">
+          <span class="label">VAD Filter Used:</span>
+          <span class="value">{{ activeTranscription.vad_filter_used ? 'Yes' : 'No' }}</span>
+        </div>
         <div class="metadata-item" *ngIf="activeTranscription.enable_llm_enhancement && activeTranscription.llm_enhancement_status">
           <span class="label">LLM Enhancement Status:</span>
           <span class="value">
@@ -291,6 +295,14 @@
           <label>
             <input type="checkbox" [(ngModel)]="enableLlmEnhancement" />
             Enhance with LLM (grammar, formatting, filler removal)
+          </label>
+        </div>
+
+        <!-- VAD Filter Checkbox -->
+        <div class="llm-enhancement-option">
+          <label>
+            <input type="checkbox" [(ngModel)]="enableVadFilter" />
+            Enable VAD (Voice Activity Detection - filters silence, improves accuracy)
           </label>
         </div>
       </div>

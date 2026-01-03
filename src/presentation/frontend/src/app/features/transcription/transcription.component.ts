@@ -31,6 +31,7 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   availableModels: string[] = ['tiny', 'base', 'small', 'medium', 'large', 'turbo'];
   isRetranscribing: boolean = false;
   enableLlmEnhancement: boolean = false;
+  enableVadFilter: boolean = false;
 
   // LLM Enhancement state
   isEnhancing: boolean = false;
@@ -544,6 +545,7 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     this.showRetranscribeDialog = false;
     this.selectedModel = 'base';
     this.isRetranscribing = false;
+    this.enableVadFilter = false;
   }
 
   /**
@@ -575,7 +577,8 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       this.activeTranscription.audio_file_id,
       this.selectedModel,
       this.activeTranscription.language || undefined,
-      this.enableLlmEnhancement
+      this.enableLlmEnhancement,
+      this.enableVadFilter
     ).pipe(takeUntil(this.destroy$))
     .subscribe({
       next: (newTranscription) => {

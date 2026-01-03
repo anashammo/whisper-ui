@@ -6,7 +6,7 @@ import asyncio
 import json
 
 from ....domain.value_objects.model_info import get_all_models, get_model_info
-from ....infrastructure.services.whisper_service import WhisperService
+from ....infrastructure.services.faster_whisper_service import FasterWhisperService
 from ....infrastructure.services.model_download_tracker import download_tracker
 from ..dependencies import get_whisper_service
 
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/models", tags=["models"])
 @router.get("/status/{model_name}")
 async def get_model_status(
     model_name: str,
-    whisper_service: WhisperService = Depends(get_whisper_service)
+    whisper_service: FasterWhisperService = Depends(get_whisper_service)
 ) -> Dict:
     """
     Check the status of a Whisper model.

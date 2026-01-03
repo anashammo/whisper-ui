@@ -1,6 +1,8 @@
 # ============================================================================
 # Stage 1: Builder - Install dependencies with UV and BuildKit caching
 # ============================================================================
+# Using CUDA 12.8 with cuDNN 9 for RTX 5090 (Blackwell architecture, sm_120)
+# CUDA 12.8+ is required for full sm_120 compute capability support
 FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu22.04 AS builder
 
 # Prevent interactive prompts during package installation
@@ -33,7 +35,7 @@ WORKDIR /build
 COPY src/presentation/api/requirements.txt .
 
 # Install PyTorch with CUDA 12.8 support FIRST (before other packages)
-# This ensures CUDA-enabled PyTorch with RTX 5090 support (sm_120) is installed
+# CUDA 12.8 wheels provide full support for RTX 5090 (Blackwell, sm_120)
 # Using UV with BuildKit cache mount for fast installs
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv pip install --system torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
@@ -45,18 +47,19 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # ============================================================================
 # Stage 2: Runtime - Minimal runtime image with GPU support
 # ============================================================================
+# CUDA 12.8 runtime with cuDNN 9 for RTX 5090 (Blackwell, sm_120)
 FROM nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
 
 # Prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install runtime dependencies with BuildKit cache
+# Note: FFmpeg not needed - PyAV (bundled with faster-whisper) includes FFmpeg libraries
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     apt-get update && apt-get install -y \
     python3.10 \
     python3-pip \
-    ffmpeg \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -75,7 +78,9 @@ COPY scripts/docker/preload_models.py /usr/local/bin/preload_models.py
 RUN chmod +x /usr/local/bin/preload_models.py
 
 # Create necessary directories
-RUN mkdir -p /app/uploads /root/.cache/whisper
+# - /app/uploads: uploaded audio files
+# - /root/.cache/huggingface: faster-whisper model cache (HuggingFace Hub)
+RUN mkdir -p /app/uploads /root/.cache/huggingface
 
 # Set Python environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -92,7 +97,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 # Create entrypoint script that runs model preload before starting app
 RUN echo '#!/bin/bash\n\
 set -e\n\
-echo "Starting Whisper Backend Container..."\n\
+echo "Starting faster-whisper Backend Container..."\n\
 echo ""\n\
 \n\
 # Run model preload script\n\

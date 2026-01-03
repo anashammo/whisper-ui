@@ -30,6 +30,7 @@ async def retranscribe_audio(
     model: str = Query(..., pattern=MODEL_VALIDATION_PATTERN, description="Whisper model to use: tiny, base, small, medium, large, turbo"),
     language: Optional[str] = Query(None, max_length=10, description="Optional language code (e.g., 'en', 'es')"),
     enable_llm_enhancement: bool = Query(False, description="Enable LLM enhancement for this transcription"),
+    vad_filter: bool = Query(False, description="Enable Voice Activity Detection (filters silence, improves accuracy)"),
     use_case: RetranscribeAudioUseCase = Depends(get_retranscribe_audio_use_case)
 ):
     """
@@ -39,7 +40,7 @@ async def retranscribe_audio(
     instead of creating a duplicate.
     """
     try:
-        transcription_dto = await use_case.execute(audio_file_id, model, language, enable_llm_enhancement)
+        transcription_dto = await use_case.execute(audio_file_id, model, language, enable_llm_enhancement, vad_filter)
         return TranscriptionResponse.from_dto(transcription_dto)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

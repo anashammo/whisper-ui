@@ -8,7 +8,8 @@
 # Installation (Fallback):
 #   pip install -r requirements.txt
 #
-# PyTorch with CUDA 12.8 (Install separately FIRST for RTX 5090 support):
+# PyTorch with CUDA 12.8 (Install separately FIRST for GPU support):
+# CUDA 12.8+ required for RTX 5090 (Blackwell architecture, sm_120)
 #   uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 #
 # Note: This project uses UV package manager for faster installations.
@@ -21,12 +22,14 @@ fastapi==0.109.0
 uvicorn[standard]==0.27.0
 python-multipart==0.0.6
 
-# Whisper & ML
-torch
-torchaudio
+# Whisper & ML (faster-whisper uses CTranslate2 for improved performance)
+# PyTorch 2.7.0+ required for RTX 5090 (Blackwell, sm_120) support
+torch>=2.7.0
+torchvision>=0.18.0
+torchaudio>=2.7.0
 numpy
-tiktoken
-more-itertools
+faster-whisper>=1.1.0
+av>=10.0.0
 
 # Database
 sqlalchemy==2.0.25
@@ -63,4 +66,3 @@ langgraph-checkpoint==3.0.1
 langgraph-prebuilt==1.0.5
 langgraph-sdk==0.3.1
 openai==2.14.0
-openai-whisper==20250625

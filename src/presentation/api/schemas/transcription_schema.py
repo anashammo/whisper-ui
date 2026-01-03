@@ -27,6 +27,9 @@ class TranscriptionResponse(BaseModel):
     llm_enhancement_status: Optional[str] = None
     llm_error_message: Optional[str] = None
 
+    # Voice Activity Detection (VAD) field
+    vad_filter_used: bool = False
+
     class Config:
         from_attributes = True
         json_schema_extra = {
@@ -75,7 +78,9 @@ class TranscriptionResponse(BaseModel):
             enhanced_text=dto.enhanced_text,
             llm_processing_time_seconds=dto.llm_processing_time_seconds,
             llm_enhancement_status=dto.llm_enhancement_status,
-            llm_error_message=dto.llm_error_message
+            llm_error_message=dto.llm_error_message,
+            # VAD field
+            vad_filter_used=dto.vad_filter_used
         )
 
 

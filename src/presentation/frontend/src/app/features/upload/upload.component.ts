@@ -16,6 +16,7 @@ export class UploadComponent implements OnInit, OnDestroy {
   selectedLanguage: string = '';
   selectedModel: string = 'base';
   enableLlmEnhancement: boolean = false;
+  enableVadFilter: boolean = false;
   isDragging: boolean = false;
   isUploading: boolean = false;
   error: string | null = null;
@@ -268,7 +269,7 @@ export class UploadComponent implements OnInit, OnDestroy {
     const language = this.selectedLanguage || undefined;
     const model = this.selectedModel || 'base';
 
-    this.transcriptionService.uploadAudio(this.selectedFile, language, model, this.enableLlmEnhancement).subscribe({
+    this.transcriptionService.uploadAudio(this.selectedFile, language, model, this.enableLlmEnhancement, this.enableVadFilter).subscribe({
       next: (transcription) => {
         this.isUploading = false;
         this.isDownloadingModel = false;

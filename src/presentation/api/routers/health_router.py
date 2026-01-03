@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends
 from src.infrastructure.config.settings import Settings, get_settings
 from src.presentation.api.dependencies import get_whisper_service
-from src.infrastructure.services.whisper_service import WhisperService
+from src.infrastructure.services.faster_whisper_service import FasterWhisperService
 
 router = APIRouter()
 
@@ -30,7 +30,7 @@ async def health_check():
     description="Get information about the system and loaded models."
 )
 async def system_info(
-    whisper_service: WhisperService = Depends(get_whisper_service),
+    whisper_service: FasterWhisperService = Depends(get_whisper_service),
     settings: Settings = Depends(get_settings)
 ):
     """

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from ...infrastructure.config.settings import Settings, get_settings
 from ...infrastructure.persistence.database import get_db
-from ...infrastructure.services.whisper_service import WhisperService
+from ...infrastructure.services.faster_whisper_service import FasterWhisperService
 from ...infrastructure.services.llm_enhancement_service_impl import LLMEnhancementServiceImpl
 from ...infrastructure.storage.local_file_storage import LocalFileStorage
 from ...infrastructure.persistence.repositories.sqlite_transcription_repository import SQLiteTranscriptionRepository
@@ -22,18 +22,18 @@ from ...application.use_cases.enhance_transcription_use_case import EnhanceTrans
 
 # Singleton services (loaded once and reused)
 @lru_cache()
-def get_whisper_service() -> WhisperService:
+def get_whisper_service() -> FasterWhisperService:
     """
-    Get Whisper service singleton.
+    Get faster-whisper service singleton.
 
     Whisper model is loaded once and reused across requests
     for performance.
 
     Returns:
-        WhisperService instance
+        FasterWhisperService instance
     """
     settings = get_settings()
-    return WhisperService(settings)
+    return FasterWhisperService(settings)
 
 
 @lru_cache()
@@ -71,7 +71,7 @@ def get_llm_enhancement_service() -> LLMEnhancementServiceImpl:
 # Use case factory functions with dependency injection
 def get_transcribe_audio_use_case(
     db: Session = Depends(get_db),
-    whisper_service: WhisperService = Depends(get_whisper_service),
+    whisper_service: FasterWhisperService = Depends(get_whisper_service),
     file_storage: LocalFileStorage = Depends(get_file_storage),
     llm_service: LLMEnhancementServiceImpl = Depends(get_llm_enhancement_service),
     settings: Settings = Depends(get_settings)
@@ -163,7 +163,7 @@ def get_delete_transcription_use_case(
 
 def get_retranscribe_audio_use_case(
     db: Session = Depends(get_db),
-    whisper_service: WhisperService = Depends(get_whisper_service),
+    whisper_service: FasterWhisperService = Depends(get_whisper_service),
     llm_service: LLMEnhancementServiceImpl = Depends(get_llm_enhancement_service)
 ) -> RetranscribeAudioUseCase:
     """

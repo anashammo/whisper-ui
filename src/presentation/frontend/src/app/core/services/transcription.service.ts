@@ -49,11 +49,11 @@ export class TranscriptionService {
   /**
    * Upload and transcribe audio file
    */
-  uploadAudio(file: File, language?: string, model?: string, enableLlmEnhancement?: boolean): Observable<Transcription> {
+  uploadAudio(file: File, language?: string, model?: string, enableLlmEnhancement?: boolean, vadFilter?: boolean): Observable<Transcription> {
     this.isLoading$.next(true);
     this.error$.next(null);
 
-    return this.apiService.uploadAudio(file, language, model, enableLlmEnhancement).pipe(
+    return this.apiService.uploadAudio(file, language, model, enableLlmEnhancement, vadFilter).pipe(
       tap({
         next: (transcription) => {
           this.currentTranscription$.next(transcription);
@@ -248,11 +248,11 @@ export class TranscriptionService {
   /**
    * Re-transcribe an existing audio file with a different model
    */
-  retranscribeAudio(audioFileId: string, model: string, language?: string, enableLlmEnhancement?: boolean): Observable<Transcription> {
+  retranscribeAudio(audioFileId: string, model: string, language?: string, enableLlmEnhancement?: boolean, vadFilter?: boolean): Observable<Transcription> {
     this.isLoading$.next(true);
     this.error$.next(null);
 
-    return this.apiService.retranscribeAudio(audioFileId, model, language, enableLlmEnhancement).pipe(
+    return this.apiService.retranscribeAudio(audioFileId, model, language, enableLlmEnhancement, vadFilter).pipe(
       tap({
         next: (transcription) => {
           this.currentTranscription$.next(transcription);

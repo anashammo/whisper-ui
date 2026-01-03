@@ -22,7 +22,7 @@ Complete guide for deploying the Whisper transcription system using Docker and D
 The Docker deployment provides a complete containerized solution with:
 
 - **PostgreSQL Database**: Persistent storage for transcriptions and audio metadata
-- **FastAPI Backend**: GPU-accelerated Whisper transcription with CUDA 12.8
+- **FastAPI Backend**: GPU-accelerated faster-whisper transcription with CUDA 12.8
 - **Angular Frontend**: Modern web interface with ng serve
 - **Hot-Reload Development**: Source code changes without container rebuild
 - **Volume Persistence**: All data stored in Docker volumes
@@ -109,7 +109,7 @@ The Docker deployment provides a complete containerized solution with:
   - Minimum: GTX 1060 (6GB VRAM)
   - Recommended: RTX 3060+ (12GB VRAM)
   - For production: RTX 4090 or A100
-  - **RTX 5090 (Blackwell)**: Requires CUDA 12.8+ and PyTorch 2.7.0+ (sm_120 architecture)
+  - **RTX 5090 (Blackwell)**: Requires CUDA 12.8+ and PyTorch 2.9.0+ (sm_120 architecture)
 
 ## Quick Start
 
@@ -192,7 +192,7 @@ python -c "import torch; print(f'GPU: {torch.cuda.get_device_name(0)}')"
 │  ├──────────────────────────────────────────────────┤     │
 │  │  • postgres-data (PostgreSQL database + logs)   │     │
 │  │  • whisper-uploads (Audio files)                │     │
-│  │  • whisper-cache (Whisper models ~1-3GB each)   │     │
+│  │  • huggingface-cache (Whisper models ~1-3GB each)   │     │
 │  │  • Source code (read-only, hot-reload)          │     │
 │  └──────────────────────────────────────────────────┘     │
 │                                                             │
@@ -220,7 +220,7 @@ python -c "import torch; print(f'GPU: {torch.cuda.get_device_name(0)}')"
 - **GPU**: NVIDIA GPU passed through via `nvidia` runtime
 - **Volumes**:
   - `whisper-uploads` → `/app/uploads` (user audio files)
-  - `whisper-cache` → `/root/.cache/whisper` (model cache)
+  - `huggingface-cache` → `/root/.cache/huggingface` (model cache)
   - `./src` → `/app/src:ro` (source code, read-only, hot-reload)
   - `./scripts` → `/app/scripts:ro` (utility scripts)
 - **Environment**: PostgreSQL connection, model preload settings
@@ -318,7 +318,7 @@ FORCE_DOWNLOAD=true
 **Model download happens**:
 - On container first run (if models not in volume)
 - On every rebuild if `FORCE_DOWNLOAD=true`
-- Models cached in `whisper-cache` volume persist across rebuilds
+- Models cached in `huggingface-cache` volume persist across rebuilds
 
 ### Port Customization
 
@@ -495,7 +495,7 @@ python scripts/docker/shell.py backend
 # Inside container:
 python -c "import torch; print(torch.cuda.is_available())"  # Check GPU
 python scripts/setup/download_whisper_model.py medium       # Download model
-ls -lh /root/.cache/whisper/                                # Check cached models
+ls -lh /root/.cache/huggingface/                             # Check cached models
 ls -lh /app/uploads/                                         # Check uploads
 ```
 
@@ -560,7 +560,7 @@ All persistent data stored in Docker named volumes:
 |------------|-------------|---------|------|
 | `postgres-data` | `/var/lib/postgresql/data` | PostgreSQL database + logs | ~100MB-10GB |
 | `whisper-uploads` | `/app/uploads` | User audio files | Varies |
-| `whisper-cache` | `/root/.cache/whisper` | Whisper models | ~1-3GB per model |
+| `huggingface-cache` | `/root/.cache/huggingface` | Whisper models | ~1-3GB per model |
 
 ### Volume Inspection
 
@@ -571,7 +571,7 @@ docker volume ls
 # Inspect specific volume
 docker volume inspect postgres-data
 docker volume inspect whisper-uploads
-docker volume inspect whisper-cache
+docker volume inspect huggingface-cache
 
 # Check volume disk usage
 docker system df -v
@@ -603,10 +603,10 @@ docker run --rm -v whisper-uploads:/data -v $(pwd):/backup alpine tar xzf /backu
 
 ```bash
 # Create tar archive of models
-docker run --rm -v whisper-cache:/data -v $(pwd):/backup alpine tar czf /backup/models_backup.tar.gz -C /data .
+docker run --rm -v huggingface-cache:/data -v $(pwd):/backup alpine tar czf /backup/models_backup.tar.gz -C /data .
 
 # Restore models
-docker run --rm -v whisper-cache:/data -v $(pwd):/backup alpine tar xzf /backup/models_backup.tar.gz -C /data
+docker run --rm -v huggingface-cache:/data -v $(pwd):/backup alpine tar xzf /backup/models_backup.tar.gz -C /data
 ```
 
 ### Volume Migration
@@ -617,7 +617,7 @@ Move volumes to new Docker host:
 # On source host: Export volumes
 docker run --rm -v postgres-data:/data -v $(pwd):/backup alpine tar czf /backup/postgres.tar.gz -C /data .
 docker run --rm -v whisper-uploads:/data -v $(pwd):/backup alpine tar czf /backup/uploads.tar.gz -C /data .
-docker run --rm -v whisper-cache:/data -v $(pwd):/backup alpine tar czf /backup/cache.tar.gz -C /data .
+docker run --rm -v huggingface-cache:/data -v $(pwd):/backup alpine tar czf /backup/cache.tar.gz -C /data .
 
 # Transfer files to new host
 scp *.tar.gz user@newhost:/path/to/whisper/
@@ -625,11 +625,11 @@ scp *.tar.gz user@newhost:/path/to/whisper/
 # On destination host: Import volumes
 docker volume create postgres-data
 docker volume create whisper-uploads
-docker volume create whisper-cache
+docker volume create huggingface-cache
 
 docker run --rm -v postgres-data:/data -v $(pwd):/backup alpine tar xzf /backup/postgres.tar.gz -C /data
 docker run --rm -v whisper-uploads:/data -v $(pwd):/backup alpine tar xzf /backup/uploads.tar.gz -C /data
-docker run --rm -v whisper-cache:/data -v $(pwd):/backup alpine tar xzf /backup/cache.tar.gz -C /data
+docker run --rm -v huggingface-cache:/data -v $(pwd):/backup alpine tar xzf /backup/cache.tar.gz -C /data
 ```
 
 ### Volume Pruning
@@ -641,7 +641,7 @@ Remove unused volumes:
 docker volume prune
 
 # Remove project volumes manually
-docker volume rm postgres-data whisper-uploads whisper-cache
+docker volume rm postgres-data whisper-uploads huggingface-cache
 ```
 
 ## GPU Configuration
@@ -696,14 +696,14 @@ python -c "import torch; print(f'cuDNN version: {torch.backends.cudnn.version()}
 python -c "import torch; print(f'GPU count: {torch.cuda.device_count()}')"
 python -c "import torch; print(f'GPU name: {torch.cuda.get_device_name(0)}')"
 
-# Check Whisper
-python -c "import whisper; print(f'Whisper version: {whisper.__version__}')"
+# Check faster-whisper
+python -c "import faster_whisper; print('faster-whisper installed')"
 
 # Expected output:
-# PyTorch version: 2.7.0+cu128
+# PyTorch version: 2.9.1+cu128
 # CUDA available: True
 # CUDA version: 12.8
-# cuDNN version: 90800
+# cuDNN version: 90100
 # GPU count: 1
 # GPU name: NVIDIA GeForce RTX 5090
 ```
@@ -913,7 +913,7 @@ backend:
 
     # Keep only data volumes:
     - whisper-uploads:/app/uploads
-    - whisper-cache:/root/.cache/whisper
+    - huggingface-cache:/root/.cache/huggingface
 
 frontend:
   volumes:
@@ -1194,7 +1194,7 @@ Add to crontab:
 
 **Symptom**: Transcription fails with "CUDA kernel errors" or "no kernel image available for device"
 
-**Root Cause**: RTX 5090 (Blackwell architecture, compute capability 12.0 / sm_120) requires CUDA 12.8+ and PyTorch 2.7.0+ with sm_120 compiled binaries. CUDA 11.8 does not support this architecture.
+**Root Cause**: RTX 5090 (Blackwell architecture, compute capability 12.0 / sm_120) requires CUDA 12.8+ and PyTorch 2.9.0+ with sm_120 compiled binaries. CUDA 11.8 or 12.6 do not fully support this architecture.
 
 **Solutions**:
 
@@ -1209,7 +1209,7 @@ Add to crontab:
 2. **Verify PyTorch version in container**:
    ```bash
    docker exec whisper-backend python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.version.cuda}')"
-   # Should show: PyTorch: 2.7.0+cu128, CUDA: 12.8
+   # Should show: PyTorch: 2.9.1+cu128, CUDA: 12.8
    ```
 
 3. **If using older CUDA version, rebuild with CUDA 12.8**:
@@ -1230,7 +1230,7 @@ Add to crontab:
    python scripts/docker/logs.py backend | grep -i "gpu\|cuda"
    # Should show:
    # GPU detected: NVIDIA GeForce RTX 5090
-   # Whisper model 'base' loaded successfully on cuda
+   # faster-whisper model 'base' loaded successfully on cuda
    ```
 
 **Note**: This issue only affects RTX 5090 and newer Blackwell GPUs. Older GPUs (RTX 40xx, 30xx, etc.) work fine with CUDA 11.8.
@@ -1373,11 +1373,11 @@ docker exec whisper-backend psql -h postgres -U whisper -d whisper_db -c "SELECT
 
 ```bash
 # List volume contents
-docker run --rm -v whisper-cache:/data alpine ls -lh /data
+docker run --rm -v huggingface-cache:/data alpine ls -lh /data
 docker run --rm -v whisper-uploads:/data alpine ls -lh /data
 
 # Check volume disk usage
-docker system df -v | grep whisper
+docker system df -v | grep -E "whisper|huggingface"
 ```
 
 ## Security Considerations
@@ -1462,6 +1462,6 @@ For issues or questions:
 
 ---
 
-**Last Updated**: December 2025
+**Last Updated**: January 2026
 **Docker Version**: 20.10+
 **Docker Compose Version**: 2.0+

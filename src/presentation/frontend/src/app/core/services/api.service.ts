@@ -18,7 +18,7 @@ export class ApiService {
   /**
    * Upload and transcribe an audio file
    */
-  uploadAudio(file: File, language?: string, model?: string, enableLlmEnhancement?: boolean): Observable<Transcription> {
+  uploadAudio(file: File, language?: string, model?: string, enableLlmEnhancement?: boolean, vadFilter?: boolean): Observable<Transcription> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -31,6 +31,9 @@ export class ApiService {
     }
     if (enableLlmEnhancement !== undefined) {
       params = params.set('enable_llm_enhancement', enableLlmEnhancement.toString());
+    }
+    if (vadFilter !== undefined) {
+      params = params.set('vad_filter', vadFilter.toString());
     }
 
     return this.http.post<Transcription>(
@@ -66,13 +69,16 @@ export class ApiService {
   /**
    * Re-transcribe an existing audio file with a different model
    */
-  retranscribeAudio(audioFileId: string, model: string, language?: string, enableLlmEnhancement?: boolean): Observable<Transcription> {
+  retranscribeAudio(audioFileId: string, model: string, language?: string, enableLlmEnhancement?: boolean, vadFilter?: boolean): Observable<Transcription> {
     let params = new HttpParams().set('model', model);
     if (language) {
       params = params.set('language', language);
     }
     if (enableLlmEnhancement !== undefined) {
       params = params.set('enable_llm_enhancement', enableLlmEnhancement.toString());
+    }
+    if (vadFilter !== undefined) {
+      params = params.set('vad_filter', vadFilter.toString());
     }
 
     return this.http.post<Transcription>(

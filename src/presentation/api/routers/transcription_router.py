@@ -50,6 +50,10 @@ async def create_transcription(
         False,
         description="Enable LLM enhancement for this transcription (grammar, formatting, filler removal)"
     ),
+    vad_filter: bool = Query(
+        False,
+        description="Enable Voice Activity Detection (filters silence, improves accuracy)"
+    ),
     use_case: TranscribeAudioUseCase = Depends(get_transcribe_audio_use_case)
 ):
     """
@@ -72,7 +76,8 @@ async def create_transcription(
             mime_type=file.content_type or "application/octet-stream",
             language=language,
             model=model or "base",
-            enable_llm_enhancement=enable_llm_enhancement
+            enable_llm_enhancement=enable_llm_enhancement,
+            vad_filter=vad_filter
         )
 
         # Debug logging

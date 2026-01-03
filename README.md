@@ -1,10 +1,12 @@
 # Whisper Voice-to-Text Transcription API
 
-A professional voice-to-text transcription system using OpenAI Whisper, built with clean architecture principles. Features GPU-accelerated transcription, FastAPI backend, and Angular frontend.
+A professional voice-to-text transcription system using **faster-whisper** (CTranslate2 backend), built with clean architecture principles. Features GPU-accelerated transcription up to 4x faster than OpenAI Whisper, Voice Activity Detection (VAD), FastAPI backend, and Angular frontend.
 
 ## Recent Updates
 
-**Latest Features (December 2025):**
+**Latest Features (January 2026):**
+- 🚀 **faster-whisper Migration**: Up to 4x faster transcription using CTranslate2 optimization
+- 🎯 **Voice Activity Detection (VAD)**: Optional Silero VAD to filter silence and improve accuracy
 - ✨ **LLM Enhancement**: Enhance transcriptions with local LLM (Ollama/LM Studio) for grammar correction, formatting, and filler word removal
 - 🤖 **Dual Text Display**: View original Whisper transcription and LLM-enhanced version side-by-side
 - 🧠 **LangGraph Integration**: Intelligent transcription enhancement using LangGraph workflow framework
@@ -24,7 +26,8 @@ A professional voice-to-text transcription system using OpenAI Whisper, built wi
 ## Features
 
 ### Core Features
-- **GPU-Accelerated Transcription**: Uses CUDA for fast audio transcription with NVIDIA RTX GPUs
+- **GPU-Accelerated Transcription**: Uses CUDA for fast audio transcription with NVIDIA RTX GPUs (up to 4x faster with faster-whisper)
+- **Voice Activity Detection (VAD)**: Optional Silero VAD to filter silence and improve transcription accuracy
 - **LLM Enhancement**: Enhance transcriptions with local LLM (Ollama/LM Studio) for grammar, formatting, and filler removal
 - **Clean Architecture**: Domain-driven design with clear separation of concerns
 - **REST API**: FastAPI with automatic OpenAPI documentation
@@ -78,12 +81,12 @@ src/
 
 ### Software
 - **Python**: 3.9 or higher
-- **CUDA**: CUDA 12.8 or higher (required for RTX 5090 and newer GPUs)
-- **PyTorch**: 2.7.0+ (required for RTX 5090 sm_120 support)
+- **CUDA**: CUDA 12.6 or higher (required for RTX 5090 and newer GPUs)
+- **PyTorch**: 2.5.0+ (required for RTX 5090 sm_120 support)
 - **cuDNN**: Compatible with CUDA version
 - **Node.js**: 18+ (for Angular frontend)
 
-**Note**: RTX 5090 (Blackwell architecture) requires CUDA 12.8+ and PyTorch 2.7.0+ with sm_120 compiled binaries. Older CUDA versions (11.8) will cause "CUDA kernel errors".
+**Note**: RTX 5090 (Blackwell architecture) requires CUDA 12.6+ and PyTorch 2.5.0+ with sm_120 compiled binaries. Older CUDA versions (11.8) will cause "CUDA kernel errors".
 
 ## Installation
 
@@ -175,11 +178,9 @@ sudo apt update && sudo apt install ffmpeg
 brew install ffmpeg
 ```
 
-### 6. Download Whisper Model
+### 6. Whisper Model Download
 
-```bash
-python scripts/setup/download_whisper_model.py base
-```
+Models are automatically downloaded on first use by faster-whisper and cached in `~/.cache/huggingface/`.
 
 Available models: `tiny`, `base`, `small`, `medium`, `large`, `turbo`
 
@@ -369,11 +370,11 @@ The Docker deployment consists of three services:
    - Volume: `postgres-data` → PostgreSQL data and logs
 
 2. **FastAPI Backend** (`backend`)
-   - GPU-accelerated with NVIDIA CUDA 12.8 (supports RTX 5090 and all older GPUs)
+   - GPU-accelerated with NVIDIA CUDA 12.6 (supports RTX 5090 and all older GPUs)
    - Port: 8001 (exposed to host)
    - Volumes:
      - `whisper-uploads` → Audio files
-     - `whisper-cache` → Whisper model cache
+     - `huggingface-cache` → Whisper model cache (HuggingFace Hub)
      - Source code mounted for hot-reload (development)
 
 3. **Angular Frontend** (`frontend`)
@@ -415,7 +416,7 @@ All persistent data is stored in Docker volumes (not in container images):
 
 - **postgres-data**: PostgreSQL database and logs
 - **whisper-uploads**: User-uploaded audio files
-- **whisper-cache**: Downloaded Whisper models (~1-3GB per model)
+- **huggingface-cache**: Downloaded Whisper models (~1-3GB per model)
 
 Data persists across container restarts and rebuilds.
 
@@ -446,7 +447,7 @@ PRELOAD_MODELS=tiny,base,small
 FORCE_DOWNLOAD=true python scripts/docker/run.py --build
 ```
 
-Models are cached in `whisper-cache` volume and reused across rebuilds.
+Models are cached in `huggingface-cache` volume and reused across rebuilds.
 
 For detailed Docker deployment guide, see [DOCKER.md](DOCKER.md).
 
@@ -464,6 +465,7 @@ Parameters:
 - language: Language code (optional, e.g., 'en', 'es')
 - model: Whisper model (optional, default: 'base', options: tiny/base/small/medium/large/turbo)
 - enable_llm_enhancement: Boolean (optional, default: false) - Enable LLM enhancement
+- vad_filter: Boolean (optional, default: false) - Enable Voice Activity Detection
 
 Response:
 {
@@ -771,7 +773,7 @@ Each Whisper model has different trade-offs between speed, accuracy, and resourc
 | **turbo** | 809M | ~3GB | ~6GB | ~8x faster | Speed + accuracy optimized |
 
 **Notes**:
-- **Download Size**: Disk space needed to store the model (cached in `~/.cache/whisper/`)
+- **Download Size**: Disk space needed to store the model (cached in `~/.cache/huggingface/`)
 - **VRAM Required**: GPU memory needed for inference (important for GPU users)
 - **Speed**: Relative to large model on A100 GPU (actual speed depends on hardware)
 - **Turbo Model**: Optimized variant with 8x faster speed, not suitable for translation tasks
@@ -840,6 +842,7 @@ The `scripts/` directory contains organized utilities in subfolders:
 |--------|-------------|
 | `migrate_add_model_column.py` | Migration: Add model column to transcriptions |
 | `migrate_add_processing_time.py` | Migration: Add processing_time_seconds column |
+| `migrate_add_vad_filter.py` | Migration: Add vad_filter_used column for VAD support |
 
 ### Usage Examples
 
@@ -895,38 +898,38 @@ mypy src/
 
 If you see "CUDA requested but not available":
 - Verify NVIDIA GPU drivers are installed
-- Ensure CUDA toolkit is installed (CUDA 12.8+ for RTX 5090)
+- Ensure CUDA toolkit is installed (CUDA 12.6+ for RTX 5090)
 - Check PyTorch CUDA installation: `python -c "import torch; print(torch.cuda.is_available())"`
 
 ### RTX 5090 CUDA Kernel Errors
 
 If you see "CUDA kernel errors" or "no kernel image available for device" with RTX 5090:
 
-**Root Cause**: RTX 5090 (Blackwell architecture, sm_120) requires CUDA 12.8+ and PyTorch 2.7.0+. CUDA 11.8 does not support this GPU.
+**Root Cause**: RTX 5090 (Blackwell architecture, sm_120) requires CUDA 12.6+ and PyTorch 2.5.0+. CUDA 11.8 does not support this GPU.
 
 **Solutions**:
-1. **Update CUDA toolkit to 12.8+**:
+1. **Update CUDA toolkit to 12.6+**:
    - Download from https://developer.nvidia.com/cuda-downloads
    - Install and restart system
 
-2. **Reinstall PyTorch with CUDA 12.8 support**:
+2. **Reinstall PyTorch with CUDA 12.6 support**:
    ```bash
    # Uninstall old version
    pip uninstall torch torchvision torchaudio
 
-   # Reinstall with CUDA 12.8 (using UV is faster)
-   uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+   # Reinstall with CUDA 12.6 (using UV is faster)
+   uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
    # Or with pip:
-   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
    ```
 
-3. **Verify PyTorch detects CUDA 12.8**:
+3. **Verify PyTorch detects CUDA 12.6**:
    ```bash
    python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.version.cuda}')"
-   # Should show: PyTorch: 2.7.0+cu128, CUDA: 12.8
+   # Should show: PyTorch: 2.5.0+cu126, CUDA: 12.6
    ```
 
-4. **Docker Users**: Rebuild with CUDA 12.8 base images
+4. **Docker Users**: Rebuild with CUDA 12.6 base images
    ```bash
    python scripts/docker/rebuild.py --no-cache
    ```

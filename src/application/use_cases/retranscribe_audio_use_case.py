@@ -37,15 +37,18 @@ class RetranscribeAudioUseCase:
         audio_file_id: str,
         model: str,
         language: Optional[str] = None,
-        enable_llm_enhancement: bool = False
+        enable_llm_enhancement: bool = False,
+        vad_filter: bool = False
     ) -> TranscriptionDTO:
         """
         Execute re-transcription workflow.
 
         Args:
             audio_file_id: ID of existing audio file
-            model: Whisper model to use (tiny, base, small, medium, large)
+            model: Whisper model to use (tiny, base, small, medium, large, turbo)
             language: Optional language code
+            enable_llm_enhancement: Whether to enhance with LLM
+            vad_filter: Whether to enable Voice Activity Detection
 
         Returns:
             TranscriptionDTO with new transcription
@@ -77,7 +80,8 @@ class RetranscribeAudioUseCase:
             completed_at=None,
             error_message=None,
             model=model,
-            enable_llm_enhancement=enable_llm_enhancement
+            enable_llm_enhancement=enable_llm_enhancement,
+            vad_filter_used=vad_filter
         )
 
         # Step 4: Persist transcription
@@ -94,7 +98,8 @@ class RetranscribeAudioUseCase:
             result = await self.speech_service.transcribe(
                 audio_file.file_path,
                 language,
-                model
+                model,
+                vad_filter
             )
 
             # Calculate processing time
