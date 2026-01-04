@@ -1,3 +1,6 @@
+# Windows special files
+nul
+
 # Python
 __pycache__/
 *.py[cod]
@@ -5,109 +8,43 @@ __pycache__/
 *.so
 .Python
 venv/
-env/
 ENV/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
+.venv/
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-venv/
-ENV/
-env/
-.venv
+dist/
+build/
+.eggs/
 
 # IDE
-.vscode/
 .idea/
+.vscode/
 *.swp
 *.swo
-*~
-.DS_Store
+
+# Environment
+.env
+*.local
 
 # Database
 *.db
-*.sqlite
 *.sqlite3
-whisper_transcriptions.db
-
-# Uploads and media
-uploads/
-*.wav
-*.mp3
-*.m4a
-*.flac
-*.ogg
-*.webm
 
 # Logs
 *.log
 logs/
 
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# Whisper models cache
-.cache/
-
-# Node modules (Angular)
+# Node
 node_modules/
-src/presentation/frontend/node_modules/
-src/presentation/frontend/dist/
-src/presentation/frontend/.angular/
 
-# Angular build artifacts
-src/presentation/frontend/dist/
-src/presentation/frontend/tmp/
-src/presentation/frontend/out-tsc/
-src/presentation/frontend/.angular/cache/
+# Angular
+.angular/
 
-# Compiled output
-*.js.map
-*.d.ts.map
-
-# System Files
+# OS
 .DS_Store
 Thumbs.db
 
-# FFmpeg (large binary files)
+# Uploads (handled by Docker volumes)
+uploads/
+
+# FFmpeg (local installation)
 ffmpeg-*/
-
-# PyCharm
-.idea/
-
-# pytest
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
