@@ -28,10 +28,27 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   // Re-transcription modal state
   showRetranscribeDialog: boolean = false;
   selectedModel: string = 'base';
+  selectedLanguage: string = '';
   availableModels: string[] = ['tiny', 'base', 'small', 'medium', 'large', 'turbo'];
   isRetranscribing: boolean = false;
   enableLlmEnhancement: boolean = false;
   enableVadFilter: boolean = false;
+
+  // Supported languages (same as upload component)
+  languages = [
+    { code: '', name: 'Auto-detect' },
+    { code: 'en', name: 'English' },
+    { code: 'es', name: 'Spanish' },
+    { code: 'fr', name: 'French' },
+    { code: 'de', name: 'German' },
+    { code: 'it', name: 'Italian' },
+    { code: 'pt', name: 'Portuguese' },
+    { code: 'ru', name: 'Russian' },
+    { code: 'ja', name: 'Japanese' },
+    { code: 'zh', name: 'Chinese' },
+    { code: 'ar', name: 'Arabic' },
+    { code: 'hi', name: 'Hindi' }
+  ];
 
   // LLM Enhancement state
   isEnhancing: boolean = false;
@@ -442,6 +459,9 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     const unused = this.availableModels.find(m => !usedModels.includes(m));
     this.selectedModel = unused || 'base';
 
+    // Initialize language from the active transcription (or auto-detect)
+    this.selectedLanguage = this.activeTranscription?.language || '';
+
     this.showRetranscribeDialog = true;
 
     // Check if the default selected model needs to be downloaded
@@ -544,7 +564,9 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   closeRetranscribeDialog(): void {
     this.showRetranscribeDialog = false;
     this.selectedModel = 'base';
+    this.selectedLanguage = '';
     this.isRetranscribing = false;
+    this.enableLlmEnhancement = false;
     this.enableVadFilter = false;
   }
 
@@ -576,7 +598,7 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     this.transcriptionService.retranscribeAudio(
       this.activeTranscription.audio_file_id,
       this.selectedModel,
-      this.activeTranscription.language || undefined,
+      this.selectedLanguage || undefined,
       this.enableLlmEnhancement,
       this.enableVadFilter
     ).pipe(takeUntil(this.destroy$))

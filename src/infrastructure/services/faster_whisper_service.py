@@ -39,15 +39,33 @@ def get_audio_duration(audio_file_path: str) -> float:
     try:
         # Use PyAV to extract duration (bundled with faster-whisper)
         abs_path = os.path.abspath(audio_file_path)
+        duration = None
+
         with av.open(abs_path) as container:
             # Get the audio stream
             stream = container.streams.audio[0]
-            # Calculate duration from stream metadata
+
+            # Method 1: Try stream metadata (most reliable)
             if stream.duration is not None and stream.time_base is not None:
                 duration = float(stream.duration * stream.time_base)
+
+            # Method 2: Try container duration (microseconds)
+            elif container.duration is not None:
+                duration = float(container.duration) / 1000000.0
+
+            # Method 3: Decode frames to calculate duration (slowest but most reliable)
             else:
-                # Fallback: decode the entire file to get duration
-                duration = float(container.duration) / 1000000.0  # Convert from microseconds
+                print("Stream/container duration unavailable, decoding to calculate...")
+                total_samples = 0
+                sample_rate = stream.sample_rate or 16000  # Default to 16kHz
+
+                for frame in container.decode(audio=0):
+                    total_samples += frame.samples
+
+                duration = total_samples / sample_rate
+
+        if duration is None or duration <= 0:
+            raise ValueError("Could not determine audio duration")
 
         print(f"Audio duration extracted: {duration:.2f} seconds")
         return duration

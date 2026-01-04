@@ -266,6 +266,20 @@
           </select>
         </div>
 
+        <div class="form-group">
+          <label for="language-select">Language:</label>
+          <select
+            id="language-select"
+            class="model-select"
+            [(ngModel)]="selectedLanguage"
+            [disabled]="isRetranscribing || isDownloadingModel"
+          >
+            <option *ngFor="let lang of languages" [value]="lang.code">
+              {{ lang.name }}
+            </option>
+          </select>
+        </div>
+
         <!-- Download Progress Bar -->
         <div class="download-progress" *ngIf="isDownloadingModel">
           <div class="progress-label">Downloading model {{ selectedModel }}...</div>
