@@ -35,6 +35,7 @@ services:
       - ./scripts:/app/scripts:ro
       - whisper-uploads:/app/uploads
       - whisper-cache:/root/.cache/whisper
+      - huggingface-cache:/root/.cache/huggingface
     environment:
       # Database configuration (PostgreSQL)
       - DATABASE_URL=postgresql://${POSTGRES_USER:-whisper}:${POSTGRES_PASSWORD:-whisper_secure_password}@postgres:5432/${POSTGRES_DB:-whisper_db}
@@ -111,6 +112,8 @@ volumes:
   whisper-uploads:
     driver: local
   whisper-cache:
+    driver: local
+  huggingface-cache:
     driver: local
 
 networks:
