@@ -13,7 +13,6 @@ from ...domain.services.llm_enhancement_service import LLMEnhancementService
 from ..interfaces.file_storage_interface import FileStorageInterface
 from ..dto.audio_upload_dto import AudioUploadDTO
 from ..dto.transcription_dto import TranscriptionDTO
-from ...infrastructure.services.whisper_service import get_audio_duration
 
 
 class TranscribeAudioUseCase:
@@ -105,7 +104,7 @@ class TranscribeAudioUseCase:
             # Log file path for debugging
             print(f"Extracting duration from: {file_path}")
 
-            duration = get_audio_duration(file_path)
+            duration = self.speech_service.get_audio_duration(file_path)
             audio_file.duration_seconds = duration
 
             # Validate duration
@@ -134,7 +133,8 @@ class TranscribeAudioUseCase:
             completed_at=None,
             error_message=None,
             model=upload_dto.model or "base",
-            enable_llm_enhancement=upload_dto.enable_llm_enhancement
+            enable_llm_enhancement=upload_dto.enable_llm_enhancement,
+            vad_filter_used=upload_dto.vad_filter
         )
 
         # Step 6: Persist transcription (PENDING status)
@@ -149,11 +149,12 @@ class TranscribeAudioUseCase:
             # Measure Whisper processing time
             start_time = time.time()
 
-            # Perform speech recognition using Whisper
+            # Perform speech recognition using faster-whisper
             result = await self.speech_service.transcribe(
                 file_path,
                 upload_dto.language,
-                upload_dto.model or "base"
+                upload_dto.model or "base",
+                upload_dto.vad_filter
             )
 
             # Calculate processing time

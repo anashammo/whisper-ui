@@ -52,7 +52,9 @@ class SQLiteTranscriptionRepository(TranscriptionRepository):
             enhanced_text=model.enhanced_text,
             llm_processing_time_seconds=model.llm_processing_time_seconds,
             llm_enhancement_status=model.llm_enhancement_status,
-            llm_error_message=model.llm_error_message
+            llm_error_message=model.llm_error_message,
+            # VAD field
+            vad_filter_used=model.vad_filter_used
         )
 
     def _to_model(self, entity: Transcription) -> TranscriptionModel:
@@ -82,7 +84,9 @@ class SQLiteTranscriptionRepository(TranscriptionRepository):
             enhanced_text=entity.enhanced_text,
             llm_processing_time_seconds=entity.llm_processing_time_seconds,
             llm_enhancement_status=entity.llm_enhancement_status,
-            llm_error_message=entity.llm_error_message
+            llm_error_message=entity.llm_error_message,
+            # VAD field
+            vad_filter_used=entity.vad_filter_used
         )
 
     async def create(self, transcription: Transcription) -> Transcription:
@@ -147,6 +151,8 @@ class SQLiteTranscriptionRepository(TranscriptionRepository):
             model.llm_processing_time_seconds = transcription.llm_processing_time_seconds
             model.llm_enhancement_status = transcription.llm_enhancement_status
             model.llm_error_message = transcription.llm_error_message
+            # VAD field
+            model.vad_filter_used = transcription.vad_filter_used
 
             self.db.commit()
             self.db.refresh(model)

@@ -40,6 +40,9 @@ class Transcription:
     llm_enhancement_status: Optional[str] = None  # 'pending', 'processing', 'completed', 'failed'
     llm_error_message: Optional[str] = None
 
+    # Voice Activity Detection (VAD) field
+    vad_filter_used: bool = False  # Whether VAD was enabled during transcription
+
     def mark_as_processing(self) -> None:
         """
         Business rule: can only process pending transcriptions.

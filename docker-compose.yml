@@ -34,7 +34,7 @@ services:
       - ./src:/app/src:ro
       - ./scripts:/app/scripts:ro
       - whisper-uploads:/app/uploads
-      - whisper-cache:/root/.cache/whisper
+      # faster-whisper uses HuggingFace Hub for model cache
       - huggingface-cache:/root/.cache/huggingface
     environment:
       # Database configuration (PostgreSQL)
@@ -111,8 +111,7 @@ volumes:
     driver: local
   whisper-uploads:
     driver: local
-  whisper-cache:
-    driver: local
+  # faster-whisper model cache (HuggingFace Hub)
   huggingface-cache:
     driver: local
 

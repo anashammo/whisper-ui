@@ -51,6 +51,9 @@ class TranscriptionModel(Base):
     llm_enhancement_status = Column(String(20), nullable=True)
     llm_error_message = Column(Text, nullable=True)
 
+    # Voice Activity Detection (VAD) field
+    vad_filter_used = Column(Boolean, default=False, nullable=False)
+
     # Relationship with audio file
     audio_file = relationship("AudioFileModel", back_populates="transcriptions")
 
