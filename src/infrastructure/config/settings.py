@@ -76,8 +76,8 @@ class Settings(BaseSettings):
     )
 
     class Config:
-        # Try backend-specific .env first, then fall back to root .env for backward compatibility
-        env_file = ("src/presentation/api/.env", ".env")
+        # Load environment from backend .env file only
+        env_file = "src/presentation/api/.env"
         env_file_encoding = "utf-8"
         case_sensitive = False
         extra = "ignore"  # Ignore extra fields in .env file

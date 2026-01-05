@@ -212,8 +212,37 @@ Edit `src/presentation/api/.env` to configure:
 
 **Frontend configuration:**
 
-Frontend uses TypeScript environment files (`src/presentation/frontend/src/environments/environment.ts`).
-No .env file needed - API URL is configured in the environment.ts file.
+Frontend uses TypeScript environment files (not `.env` files) for configuration:
+
+**Files:**
+- `src/presentation/frontend/src/environments/environment.ts` - Development config
+- `src/presentation/frontend/src/environments/environment.prod.ts` - Production config
+
+**Configuration Variables:**
+```typescript
+// environment.ts (development)
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8001/api/v1'
+};
+
+// environment.prod.ts (production)
+export const environment = {
+  production: true,
+  apiUrl: 'http://localhost:8001/api/v1'  // Update for production deployment
+};
+```
+
+**Why TypeScript instead of .env?**
+- **Type safety**: Catch configuration errors at compile time
+- **Angular AOT**: Ahead-of-time compilation bakes config into the bundle
+- **Tree shaking**: Unused variables removed from production builds
+- **IDE support**: IntelliSense and auto-completion work out of the box
+
+**Adding new environment variables:**
+1. Add to `environment.ts` with development value
+2. Add to `environment.prod.ts` with production value
+3. Import in code: `import { environment } from '../environments/environment';`
 
 ### 9. Setup LLM Enhancement (Optional)
 
@@ -307,7 +336,7 @@ For production deployment or containerized development, use Docker:
 
 ```bash
 # 1. Configure backend environment variables
-cp src/presentation/api/.env.docker src/presentation/api/.env
+cp src/presentation/api/.env.example src/presentation/api/.env
 # Edit src/presentation/api/.env and set secure POSTGRES_PASSWORD
 
 # 2. Build and run all services
@@ -330,28 +359,28 @@ python scripts/docker/build.py --backend    # Build backend only
 python scripts/docker/build.py --frontend   # Build frontend only
 python scripts/docker/build.py --no-cache   # Clean build
 
-# Run services
-python scripts/docker/run.py                # Start core services
+# Run services (ngrok tunnels included by default)
+python scripts/docker/run.py                # Start all services with ngrok
 python scripts/docker/run.py --build        # Build and start
 python scripts/docker/run.py --detach       # Run in background
-python scripts/docker/run.py --ngrok        # Include ngrok tunnels (requires NGROK_AUTHTOKEN)
+python scripts/docker/run.py --no-ngrok     # Exclude ngrok tunnels (core services only)
 
-# View logs
-python scripts/docker/logs.py               # Core service logs
-python scripts/docker/logs.py backend       # Backend only
+# View logs (ngrok included by default)
+python scripts/docker/logs.py               # All service logs including ngrok
+python scripts/docker/logs.py backend       # Backend only (use service name)
 python scripts/docker/logs.py --follow      # Follow logs
 python scripts/docker/logs.py --tail 100    # Last 100 lines
-python scripts/docker/logs.py --ngrok -f    # Include ngrok logs
+python scripts/docker/logs.py --no-ngrok    # Core services only (exclude ngrok)
 
 # Stop services
 python scripts/docker/stop.py               # Stop all containers
 python scripts/docker/stop.py -v            # Stop and remove volumes (WARNING: deletes data)
 python scripts/docker/stop.py --ngrok-only  # Stop only ngrok tunnels
 
-# Open shell in container
-python scripts/docker/shell.py backend      # Backend shell
-python scripts/docker/shell.py frontend     # Frontend shell
-python scripts/docker/shell.py postgres     # PostgreSQL shell
+# Open shell in container (use service names)
+python scripts/docker/shell.py backend      # Backend shell (container: whisper-backend)
+python scripts/docker/shell.py frontend     # Frontend shell (container: whisper-frontend)
+python scripts/docker/shell.py postgres     # PostgreSQL shell (container: whisper-postgres)
 
 # Clean up resources
 python scripts/docker/clean.py              # Remove containers
@@ -359,21 +388,24 @@ python scripts/docker/clean.py --images     # Remove images
 python scripts/docker/clean.py --volumes    # Remove volumes (WARNING: deletes data)
 python scripts/docker/clean.py --all        # Remove everything (WARNING)
 
-# Rebuild and restart
-python scripts/docker/rebuild.py            # Stop, rebuild, and restart core services
-python scripts/docker/rebuild.py --ngrok    # Rebuild with ngrok tunnels
+# Rebuild and restart (ngrok included by default)
+python scripts/docker/rebuild.py            # Stop, rebuild, and restart all services
+python scripts/docker/rebuild.py --no-ngrok # Rebuild core services only (exclude ngrok)
 ```
 
-### Ngrok Tunnels (Optional)
+### Ngrok Tunnels
 
-For external access via public URLs, use ngrok tunnels:
+Ngrok tunnels are included by default for external access via public URLs.
 
 ```bash
-# Set your ngrok auth token in .env
+# Set your ngrok auth token in src/presentation/api/.env
 NGROK_AUTHTOKEN=your_token_here
 
-# Start with ngrok
-python scripts/docker/run.py --ngrok --build --detach
+# Start services (ngrok included by default)
+python scripts/docker/run.py --build --detach
+
+# Start without ngrok (core services only)
+python scripts/docker/run.py --no-ngrok --build --detach
 ```
 
 **Public URLs** (requires reserved domains in ngrok account):
@@ -386,26 +418,27 @@ python scripts/docker/run.py --ngrok --build --detach
 - Frontend: http://localhost:4051
 - LLM: http://localhost:4052
 
-See [DOCKER.md](DOCKER.md#ngrok-tunnels) for detailed ngrok configuration.
 
 ### Docker Architecture
 
-The Docker deployment consists of three services:
+**Docker Compose Project**: `whisper-ui` (set via COMPOSE_PROJECT_NAME in scripts)
 
-1. **PostgreSQL Database** (`postgres`)
+The Docker deployment consists of three core services (service name → container name):
+
+1. **PostgreSQL Database** (`postgres` → `whisper-postgres`)
    - Image: `postgres:15-alpine`
-   - Port: 5432 (internal only)
+   - Port: 5533 (exposed to host) → 5432 (internal)
    - Volume: `postgres-data` → PostgreSQL data and logs
 
-2. **FastAPI Backend** (`backend`)
-   - GPU-accelerated with NVIDIA CUDA 12.6 (supports RTX 5090 and all older GPUs)
+2. **FastAPI Backend** (`backend` → `whisper-backend`)
+   - GPU-accelerated with NVIDIA CUDA 12.8 (supports RTX 5090 and all older GPUs)
    - Port: 8001 (exposed to host)
    - Volumes:
      - `whisper-uploads` → Audio files
      - `huggingface-cache` → Whisper model cache (HuggingFace Hub)
      - Source code mounted for hot-reload (development)
 
-3. **Angular Frontend** (`frontend`)
+3. **Angular Frontend** (`frontend` → `whisper-frontend`)
    - Node.js 18 with ng serve
    - Port: 4200 (exposed to host)
    - Volume: Source code mounted for hot-reload (development)
@@ -427,6 +460,7 @@ FORCE_DOWNLOAD=                  # Set to "true" to force re-download
 # Port Mapping
 BACKEND_PORT=8001
 FRONTEND_PORT=4200
+POSTGRES_PORT=5533
 ```
 
 ### Hot-Reload Development
@@ -476,8 +510,6 @@ FORCE_DOWNLOAD=true python scripts/docker/run.py --build
 ```
 
 Models are cached in `huggingface-cache` volume and reused across rebuilds.
-
-For detailed Docker deployment guide, see [DOCKER.md](DOCKER.md).
 
 ## API Endpoints
 
@@ -697,6 +729,54 @@ Response:
 }
 ```
 
+## Frontend Services
+
+The Angular frontend uses RxJS-based services for API communication and state management:
+
+### ApiService (`core/services/api.service.ts`)
+
+HTTP client for backend API calls:
+
+```typescript
+// Upload and transcribe audio
+uploadAudio(file: File, language?: string, model?: string): Observable<Transcription>
+
+// Get transcription history
+getTranscriptions(limit?: number, offset?: number): Observable<TranscriptionList>
+
+// Get single transcription
+getTranscription(id: string): Observable<Transcription>
+
+// Delete transcription
+deleteTranscription(id: string): Observable<void>
+
+// Re-transcribe with different model
+retranscribe(audioFileId: string, model: string, language?: string): Observable<Transcription>
+
+// Enhance transcription with LLM
+enhanceTranscription(id: string): Observable<Transcription>
+
+// Health check
+healthCheck(): Observable<HealthStatus>
+```
+
+### TranscriptionService (`core/services/transcription.service.ts`)
+
+Manages application state with RxJS BehaviorSubjects:
+
+```typescript
+// Observable streams
+currentTranscription$: Observable<Transcription | null>
+transcriptionHistory$: Observable<Transcription[]>
+isLoading$: Observable<boolean>
+
+// State management methods
+loadTranscription(id: string): void
+loadHistory(): void
+startPolling(id: string): void  // Auto-poll while processing
+stopPolling(): void
+```
+
 ## Usage Example
 
 ### Using cURL
@@ -748,11 +828,14 @@ Whisper/
 │       │   ├── dependencies.py   # Dependency injection
 │       │   ├── Dockerfile        # Backend Docker image
 │       │   ├── requirements.txt  # Python dependencies
-│       │   ├── .env.example      # Backend env template (local)
-│       │   └── .env.docker       # Backend env template (Docker)
+│       │   └── .env.example      # Backend env template
 │       └── frontend/             # Angular Web Application
 │           ├── src/              # Angular source code
 │           │   ├── app/          # Application modules
+│           │   │   ├── core/     # Core services and models
+│           │   │   │   ├── models/    # TypeScript interfaces
+│           │   │   │   └── services/  # API and business logic services
+│           │   │   └── features/      # Feature modules (upload, transcription, history)
 │           │   └── environments/ # TypeScript environment configs
 │           ├── package.json      # NPM dependencies
 │           ├── angular.json      # Angular configuration
@@ -779,10 +862,9 @@ Whisper/
 │       └── migrate_add_processing_time.py # Add processing time
 ├── tests/                         # Tests
 ├── docker-compose.yml             # Docker orchestration
-├── .env.example                   # Root env template (backward compat)
 └── README.md                      # This file
 
-**Note**: Backend configuration files (Dockerfile, requirements.txt, .env) are now located in `src/presentation/api/` for better organization.
+**Note**: All backend configuration files (Dockerfile, requirements.txt, .env, .env.example) are located in `src/presentation/api/`.
 ```
 
 ## Configuration
@@ -971,6 +1053,21 @@ If you encounter import errors:
 - Verify all dependencies are installed:
   - With UV: `uv pip install -r src/presentation/api/requirements.txt`
   - With pip: `pip install -r src/presentation/api/requirements.txt`
+
+### Frontend API Connection Issues
+
+If you see "Failed to connect to API":
+1. Ensure backend is running on http://localhost:8001
+2. Check CORS settings in backend allow http://localhost:4200
+3. Verify `src/presentation/frontend/src/environments/environment.ts` has correct API URL
+
+### Frontend Build Errors
+
+If you encounter Angular build errors:
+1. Delete `node_modules` and `package-lock.json` in `src/presentation/frontend/`
+2. Run `npm install` again
+3. Clear Angular cache: `npm run ng cache clean`
+4. Restart your IDE/editor
 
 ### Database Errors
 

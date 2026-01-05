@@ -2,12 +2,12 @@
 """Stop Docker Compose services
 
 Stops all services including:
-- postgres: PostgreSQL database
-- backend: FastAPI + Whisper API
-- frontend: Angular SPA
-- ngrok-whisper-backend: Ngrok tunnel for backend (if running)
-- ngrok-whisper-frontend: Ngrok tunnel for frontend (if running)
-- ngrok-whisper-llm: Ngrok tunnel for LLM service (if running)
+- postgres: PostgreSQL database (container: whisper-postgres)
+- backend: FastAPI + Whisper API (container: whisper-backend)
+- frontend: Angular SPA (container: whisper-frontend)
+- ngrok-backend: Ngrok tunnel for backend (container: ngrok-whisper-backend)
+- ngrok-frontend: Ngrok tunnel for frontend (container: ngrok-whisper-frontend)
+- ngrok-llm: Ngrok tunnel for LLM service (container: ngrok-whisper-llm)
 
 Usage:
     python scripts/docker/stop.py              # Stop all services
@@ -17,10 +17,14 @@ Usage:
 import subprocess
 import sys
 import argparse
+import os
 
 # Fix Unicode encoding for Windows console
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
+
+# Set Docker Compose project name for consistent container naming in Docker Desktop
+os.environ["COMPOSE_PROJECT_NAME"] = "whisper-ui"
 
 
 def main():
@@ -31,6 +35,9 @@ def main():
                        help="Stop only ngrok tunnel services")
 
     args = parser.parse_args()
+
+    # Env file for docker-compose
+    env_file = ["--env-file", "src/presentation/api/.env"]
 
     if args.ngrok_only:
         # Stop only ngrok containers by name
@@ -44,7 +51,7 @@ def main():
         sys.exit(0)
 
     # Stop all services (with profile to include ngrok if running)
-    cmd = ["docker-compose", "--profile", "ngrok", "down"]
+    cmd = ["docker-compose"] + env_file + ["--profile", "ngrok", "down"]
 
     if args.remove_volumes:
         print("WARNING: This will remove all volumes and delete data!")

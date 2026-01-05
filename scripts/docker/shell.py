@@ -1,30 +1,34 @@
 #!/usr/bin/env python3
 """Open shell in running container
 
-Available services:
-- backend: FastAPI + Whisper API (bash)
-- frontend: Angular SPA (sh)
-- postgres: PostgreSQL database (sh)
-- ngrok-whisper-backend: Ngrok tunnel for backend (sh)
-- ngrok-whisper-frontend: Ngrok tunnel for frontend (sh)
-- ngrok-whisper-llm: Ngrok tunnel for LLM service (sh)
+Available services (use service names, maps to container names):
+- backend: FastAPI + Whisper API (container: whisper-backend, shell: bash)
+- frontend: Angular SPA (container: whisper-frontend, shell: sh)
+- postgres: PostgreSQL database (container: whisper-postgres, shell: sh)
+- ngrok-backend: Ngrok tunnel for backend (container: ngrok-whisper-backend, shell: sh)
+- ngrok-frontend: Ngrok tunnel for frontend (container: ngrok-whisper-frontend, shell: sh)
+- ngrok-llm: Ngrok tunnel for LLM service (container: ngrok-whisper-llm, shell: sh)
 
 Usage:
-    python scripts/docker/shell.py backend     # Open bash in backend
-    python scripts/docker/shell.py postgres    # Open sh in postgres
+    python scripts/docker/shell.py backend   # Open bash in backend container
+    python scripts/docker/shell.py postgres  # Open sh in postgres container
 """
 import subprocess
 import sys
 import argparse
+import os
 
-# Container name and shell mapping
+# Set Docker Compose project name for consistent container naming in Docker Desktop
+os.environ["COMPOSE_PROJECT_NAME"] = "whisper-ui"
+
+# Service name to (container name, shell) mapping
 CONTAINER_MAP = {
     "backend": ("whisper-backend", "bash"),
     "frontend": ("whisper-frontend", "sh"),
     "postgres": ("whisper-postgres", "sh"),
-    "ngrok-whisper-backend": ("ngrok-whisper-backend", "sh"),
-    "ngrok-whisper-frontend": ("ngrok-whisper-frontend", "sh"),
-    "ngrok-whisper-llm": ("ngrok-whisper-llm", "sh")
+    "ngrok-backend": ("ngrok-whisper-backend", "sh"),
+    "ngrok-frontend": ("ngrok-whisper-frontend", "sh"),
+    "ngrok-llm": ("ngrok-whisper-llm", "sh")
 }
 
 

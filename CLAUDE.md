@@ -134,7 +134,7 @@ You **must review and update**:
 - `CLAUDE.md`
 - All relevant `*.md` files
 - `scripts/`
-- `.env`, `.env.example`, env templates
+- `src/presentation/api/.env.example` (backend env template)
 
 Documentation drift is a **bug**.
 
@@ -176,14 +176,14 @@ Documentation drift is a **bug**.
   - Certificates
 
 ### Environment Variables
-- `.env` files with real secrets:
+- Runtime `.env` file (`src/presentation/api/.env`):
   - Must NOT be committed
   - Must be in `.gitignore`
 - Always maintain:
-  - `.env.example` with placeholders
+  - `src/presentation/api/.env.example` with placeholders
 - Every new env variable requires:
   - `.env.example` update
-  - Documentation update
+  - Documentation update (README.md, CLAUDE.md)
 
 ### Logs & Docker
 - Never log secrets
@@ -335,6 +335,7 @@ src/
 │   ├── entities/               # Transcription, AudioFile (dataclasses with business rules)
 │   ├── repositories/           # Abstract repository interfaces
 │   ├── services/              # Abstract service interfaces (SpeechRecognitionService, LLMEnhancementService)
+│   ├── value_objects/         # ModelInfo and other value objects
 │   └── exceptions/            # Domain-specific exceptions
 │
 ├── application/                # Use cases orchestrate domain logic
@@ -345,22 +346,25 @@ src/
 │       └── enhancement_agent.py  # LangGraph workflow for LLM calls
 │
 ├── infrastructure/             # External implementations
+│   ├── config/                # Settings (Pydantic BaseSettings)
 │   ├── persistence/
 │   │   ├── models/            # SQLAlchemy ORM models (NOT domain entities)
 │   │   └── repositories/      # SQLiteTranscriptionRepository implements domain interfaces
 │   ├── services/              # FasterWhisperService, LLMEnhancementServiceImpl
-│   └── storage/               # LocalFileStorage for audio files
+│   ├── storage/               # LocalFileStorage for audio files
+│   ├── logging/               # Logging configuration
+│   └── llm/                   # LLM integration
+│       └── llm_client.py     # OpenAI-compatible LLM client for Ollama/LM Studio
 │
 └── presentation/
     ├── api/                   # FastAPI routers, schemas, dependencies
-    │   ├── routers/          # transcription_router, audio_file_router, llm_enhancement_router
+    │   ├── routers/          # transcription_router, audio_file_router, llm_enhancement_router, health_router, model_router
     │   ├── schemas/          # Pydantic models for request/response
+    │   ├── middleware/       # Custom middleware
+    │   ├── mappers/          # Entity to schema mappers
+    │   ├── main.py           # FastAPI app entry point
     │   └── dependencies.py   # Dependency injection with @lru_cache for singletons
     └── frontend/             # Angular SPA
-
-infrastructure/
-└── llm/
-    └── llm_client.py         # OpenAI-compatible LLM client for Ollama/LM Studio
 ```
 
 ### Data Flow Example (Re-transcription)
@@ -575,47 +579,50 @@ mypy src/
 **IMPORTANT**: Docker deployment uses PostgreSQL for ALL environments (development and production), not SQLite.
 
 ```bash
-# Quick start (core services only)
-cp .env.docker .env
+# Quick start (all services including ngrok tunnels)
+# Copy template to .env (if not already configured)
+cp src/presentation/api/.env.example src/presentation/api/.env
 python scripts/docker/run.py --build
 
-# Start with ngrok tunnels (requires NGROK_AUTHTOKEN in .env)
-python scripts/docker/run.py --build --ngrok
+# Start without ngrok tunnels (core services only)
+python scripts/docker/run.py --build --no-ngrok
 
 # Management scripts (scripts/docker/)
 python scripts/docker/build.py              # Build images
-python scripts/docker/run.py                # Start core services
-python scripts/docker/run.py --ngrok        # Start with ngrok tunnels
+python scripts/docker/run.py                # Start all services (including ngrok)
+python scripts/docker/run.py --no-ngrok     # Start core services only
 python scripts/docker/stop.py               # Stop all services
 python scripts/docker/stop.py --ngrok-only  # Stop only ngrok tunnels
-python scripts/docker/logs.py --follow      # View core service logs
-python scripts/docker/logs.py --ngrok -f    # View all logs including ngrok
+python scripts/docker/logs.py --follow      # View all logs (including ngrok)
+python scripts/docker/logs.py --no-ngrok -f # View core service logs only
 python scripts/docker/shell.py backend      # Open shell in backend
 python scripts/docker/clean.py --all        # Clean all resources
-python scripts/docker/rebuild.py            # Rebuild core services
-python scripts/docker/rebuild.py --ngrok    # Rebuild with ngrok tunnels
+python scripts/docker/rebuild.py            # Rebuild all services (including ngrok)
+python scripts/docker/rebuild.py --no-ngrok # Rebuild core services only
 ```
 
-**Docker Architecture**:
-- **postgres**: PostgreSQL 15 (port 5432 internal, volume: postgres-data)
-- **backend**: FastAPI + CUDA 12.8 (port 8001, volumes: whisper-uploads, huggingface-cache, source code for hot-reload)
-- **frontend**: Angular ng serve (port 4200, volume: source code for hot-reload)
+**Docker Compose Project**: `whisper-ui` (set via COMPOSE_PROJECT_NAME in scripts)
 
-**Ngrok Tunnels** (optional, use `--ngrok` flag):
-- **ngrok-whisper-backend**: Tunnel for backend API → https://anas-hammo-whisper-backend.ngrok.dev
-- **ngrok-whisper-frontend**: Tunnel for frontend → https://anas-hammo-whisper-frontend.ngrok.dev
-- **ngrok-whisper-llm**: Tunnel for LLM service → https://anas-hammo-whisper-llm.ngrok.dev
+**Docker Architecture** (service name → container name):
+- **postgres** → `whisper-postgres`: PostgreSQL 15 (port 5533 external, 5432 internal, volume: whisper-ui_whisper-postgres-data)
+- **backend** → `whisper-backend`: FastAPI + CUDA 12.8 (port 8001, volumes: whisper-ui_whisper-uploads, whisper-ui_huggingface-cache, source code for hot-reload)
+- **frontend** → `whisper-frontend`: Angular ng serve (port 4200, volume: source code for hot-reload)
+
+**Ngrok Tunnels** (included by default, use `--no-ngrok` to exclude):
+- **ngrok-backend** → `ngrok-whisper-backend`: Tunnel for backend API → https://anas-hammo-whisper-backend.ngrok.dev
+- **ngrok-frontend** → `ngrok-whisper-frontend`: Tunnel for frontend → https://anas-hammo-whisper-frontend.ngrok.dev
+- **ngrok-llm** → `ngrok-whisper-llm`: Tunnel for LLM service → https://anas-hammo-whisper-llm.ngrok.dev
 
 **Ngrok Web Inspection UI** (for debugging requests):
 - Backend: http://localhost:4050
 - Frontend: http://localhost:4051
 - LLM: http://localhost:4052
 
-**Docker Profiles**: Ngrok services use Docker Compose profiles (`profiles: - ngrok`). They only start when explicitly requested with `--ngrok` flag, which translates to `docker-compose --profile ngrok up`.
+**Docker Profiles**: Ngrok services use Docker Compose profiles (`profiles: - ngrok`). They start by default. Use `--no-ngrok` flag to exclude them and run core services only.
 
 **Hot-Reload**: Source code mounted as read-only volumes, changes auto-detected without rebuild
 
-**Model Preloading**: Set `PRELOAD_MODELS=tiny,base,small` in .env to download on startup
+**Model Preloading**: Set `PRELOAD_MODELS=tiny,base,small` in `src/presentation/api/.env` to download on startup
 
 **GPU Support**: Backend requires NVIDIA Container Toolkit, uses `nvidia` runtime with GPU capabilities
 - **IMPORTANT**: RTX 5090 (Blackwell architecture, sm_120) requires CUDA 12.8+ and PyTorch 2.7.0+
@@ -774,14 +781,25 @@ switchTranscription(transcription: Transcription): void {
 - **Verify GPU**: `python -c "import torch; print(torch.cuda.is_available())"`
 - Backend prints on startup: "GPU detected: NVIDIA GeForce RTX 5090"
 
-### FFmpeg Path (Windows)
+### FFmpeg Requirement
 
-Backend automatically adds FFmpeg to PATH if found in project directory:
-```python
-ffmpeg_path = Path("ffmpeg-8.0.1-essentials_build/bin")
-if ffmpeg_path.exists():
-    os.environ["PATH"] = str(ffmpeg_path.absolute()) + os.pathsep + os.environ.get("PATH", "")
+FFmpeg must be installed system-wide and available in PATH:
+
+**Windows:**
+1. Download from https://www.gyan.dev/ffmpeg/builds/
+2. Extract and add `bin/` folder to system PATH
+3. Verify: `ffmpeg -version`
+
+**Linux/Mac:**
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install ffmpeg
+
+# macOS
+brew install ffmpeg
 ```
+
+**Docker:** FFmpeg is pre-installed in the backend container image.
 
 ## API Design Patterns
 
@@ -916,7 +934,7 @@ All commits include standardized footer:
 ```
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
 Use semantic commit messages:

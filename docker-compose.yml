@@ -7,8 +7,10 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-whisper}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-whisper_secure_password}
       POSTGRES_DB: ${POSTGRES_DB:-whisper_db}
+    ports:
+      - "${POSTGRES_PORT:-5533}:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - whisper-postgres-data:/var/lib/postgresql/data
     networks:
       - whisper-network
     healthcheck:
@@ -107,55 +109,50 @@ services:
       - whisper-network
 
   # Ngrok Tunnel for Backend API (external access)
-  ngrok-whisper-backend:
+  ngrok-backend:
     image: ngrok/ngrok:latest
     container_name: ngrok-whisper-backend
     environment:
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
-    command: http host.docker.internal:8001 --url=anas-hammo-whisper-backend.ngrok.dev
+    command: http backend:8001 --url=anas-hammo-whisper-backend.ngrok.dev
     ports:
-      - "4050:4040"  # Ngrok web inspection UI (4050 to avoid conflict with other services)
+      - "4050:4040"  # Ngrok web inspection UI
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
     networks:
       - whisper-network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     profiles:
       - ngrok
 
   # Ngrok Tunnel for Frontend (external access)
-  ngrok-whisper-frontend:
+  ngrok-frontend:
     image: ngrok/ngrok:latest
     container_name: ngrok-whisper-frontend
     environment:
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
-    command: http host.docker.internal:4200 --url=anas-hammo-whisper-frontend.ngrok.dev
+    command: http frontend:4200 --url=anas-hammo-whisper-frontend.ngrok.dev
     ports:
-      - "4051:4040"  # Ngrok web inspection UI (4051 to avoid conflict with other services)
+      - "4051:4040"  # Ngrok web inspection UI
     depends_on:
       frontend:
         condition: service_healthy
     restart: unless-stopped
     networks:
       - whisper-network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     profiles:
       - ngrok
 
   # Ngrok Tunnel for LLM Service (external access to local LLM like LM Studio/Ollama)
-  # Note: No depends_on since LLM runs on host machine, not in Docker
-  ngrok-whisper-llm:
+  ngrok-llm:
     image: ngrok/ngrok:latest
     container_name: ngrok-whisper-llm
     environment:
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
     command: http host.docker.internal:1234 --url=anas-hammo-whisper-llm.ngrok.dev
     ports:
-      - "4052:4040"  # Ngrok web inspection UI (4052 to avoid conflict with other services)
+      - "4052:4040"  # Ngrok web inspection UI
     restart: unless-stopped
     networks:
       - whisper-network
@@ -165,7 +162,7 @@ services:
       - ngrok
 
 volumes:
-  postgres-data:
+  whisper-postgres-data:
     driver: local
   whisper-uploads:
     driver: local

@@ -2,12 +2,12 @@
 """Clean up Docker resources
 
 Cleans up all services:
-- postgres: PostgreSQL database
-- backend: FastAPI + Whisper API
-- frontend: Angular SPA
-- ngrok-whisper-backend: Ngrok tunnel for backend
-- ngrok-whisper-frontend: Ngrok tunnel for frontend
-- ngrok-whisper-llm: Ngrok tunnel for LLM service
+- postgres: PostgreSQL database (container: whisper-postgres)
+- backend: FastAPI + Whisper API (container: whisper-backend)
+- frontend: Angular SPA (container: whisper-frontend)
+- ngrok-backend: Ngrok tunnel for backend (container: ngrok-whisper-backend)
+- ngrok-frontend: Ngrok tunnel for frontend (container: ngrok-whisper-frontend)
+- ngrok-llm: Ngrok tunnel for LLM service (container: ngrok-whisper-llm)
 
 Usage:
     python scripts/docker/clean.py             # Stop and remove containers
@@ -18,10 +18,14 @@ Usage:
 import subprocess
 import sys
 import argparse
+import os
 
 # Fix Unicode encoding for Windows console
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
+
+# Set Docker Compose project name for consistent container naming in Docker Desktop
+os.environ["COMPOSE_PROJECT_NAME"] = "whisper-ui"
 
 
 def main():
@@ -33,6 +37,9 @@ def main():
 
     args = parser.parse_args()
 
+    # Env file for docker-compose
+    env_file = ["--env-file", "src/presentation/api/.env"]
+
     if args.all:
         print("WARNING: This will remove all containers, images, and volumes!")
         print("All data will be deleted!")
@@ -42,7 +49,7 @@ def main():
             sys.exit(0)
 
         # Stop and remove containers and volumes (include ngrok profile)
-        subprocess.run(["docker-compose", "--profile", "ngrok", "down", "-v"])
+        subprocess.run(["docker-compose"] + env_file + ["--profile", "ngrok", "down", "-v"])
 
         # Remove images (only backend/frontend, ngrok uses Docker Hub image)
         subprocess.run(["docker", "rmi", "whisper-backend", "whisper-frontend"],
@@ -63,12 +70,12 @@ def main():
             print("Cancelled.")
             sys.exit(0)
 
-        subprocess.run(["docker-compose", "--profile", "ngrok", "down", "-v"])
+        subprocess.run(["docker-compose"] + env_file + ["--profile", "ngrok", "down", "-v"])
         print("[OK] Volumes removed!")
 
     else:
         # Just stop and remove containers (default) - include ngrok profile
-        subprocess.run(["docker-compose", "--profile", "ngrok", "down"])
+        subprocess.run(["docker-compose"] + env_file + ["--profile", "ngrok", "down"])
         print("[OK] Containers stopped and removed!")
 
 

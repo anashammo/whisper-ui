@@ -92,6 +92,23 @@ def download_model(model_name: str, force: bool = False) -> bool:
         return False
 
 
+def parse_models(models_input):
+    """Parse model list from comma or space-separated string."""
+    models = []
+    for item in models_input:
+        # Handle comma-separated values
+        if "," in item:
+            models.extend([m.strip() for m in item.split(",") if m.strip()])
+        else:
+            models.append(item.strip())
+    # Validate models
+    valid_models = [m for m in models if m in AVAILABLE_MODELS]
+    invalid_models = [m for m in models if m not in AVAILABLE_MODELS]
+    if invalid_models:
+        print(f"Warning: Ignoring invalid models: {', '.join(invalid_models)}")
+    return valid_models if valid_models else DEFAULT_MODELS
+
+
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
@@ -100,9 +117,8 @@ def main():
     parser.add_argument(
         "--models",
         nargs="+",
-        choices=AVAILABLE_MODELS,
         default=DEFAULT_MODELS,
-        help=f"Models to download (default: {DEFAULT_MODELS})"
+        help=f"Models to download (comma or space-separated). Available: {', '.join(AVAILABLE_MODELS)} (default: {DEFAULT_MODELS})"
     )
     parser.add_argument(
         "--force",
@@ -118,7 +134,10 @@ def main():
     args = parser.parse_args()
 
     # Determine which models to download
-    models_to_download = AVAILABLE_MODELS if args.all else args.models
+    if args.all:
+        models_to_download = AVAILABLE_MODELS
+    else:
+        models_to_download = parse_models(args.models)
 
     print("=" * 60)
     print("faster-whisper Model Pre-Download Script")

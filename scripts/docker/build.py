@@ -3,10 +3,14 @@
 import subprocess
 import sys
 import argparse
+import os
 
 # Fix Unicode encoding for Windows console
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
+
+# Set Docker Compose project name for consistent container naming in Docker Desktop
+os.environ["COMPOSE_PROJECT_NAME"] = "whisper-ui"
 
 
 def run_command(cmd, description):
