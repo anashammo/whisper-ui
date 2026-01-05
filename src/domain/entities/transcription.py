@@ -43,6 +43,9 @@ class Transcription:
     # Voice Activity Detection (VAD) field
     vad_filter_used: bool = False  # Whether VAD was enabled during transcription
 
+    # Arabic Tashkeel (Diacritization) field
+    enable_tashkeel: bool = False  # Whether to add Arabic diacritics during LLM enhancement
+
     def mark_as_processing(self) -> None:
         """
         Business rule: can only process pending transcriptions.

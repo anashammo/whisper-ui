@@ -38,7 +38,8 @@ class RetranscribeAudioUseCase:
         model: str,
         language: Optional[str] = None,
         enable_llm_enhancement: bool = False,
-        vad_filter: bool = False
+        vad_filter: bool = False,
+        enable_tashkeel: bool = False
     ) -> TranscriptionDTO:
         """
         Execute re-transcription workflow.
@@ -49,6 +50,7 @@ class RetranscribeAudioUseCase:
             language: Optional language code
             enable_llm_enhancement: Whether to enhance with LLM
             vad_filter: Whether to enable Voice Activity Detection
+            enable_tashkeel: Whether to add Arabic diacritics during LLM enhancement
 
         Returns:
             TranscriptionDTO with new transcription
@@ -81,7 +83,8 @@ class RetranscribeAudioUseCase:
             error_message=None,
             model=model,
             enable_llm_enhancement=enable_llm_enhancement,
-            vad_filter_used=vad_filter
+            vad_filter_used=vad_filter,
+            enable_tashkeel=enable_tashkeel
         )
 
         # Step 4: Persist transcription
@@ -125,7 +128,8 @@ class RetranscribeAudioUseCase:
                     # Call LLM enhancement service
                     llm_result = await self.llm_service.enhance_transcription(
                         text=saved_transcription.text,
-                        language=saved_transcription.language
+                        language=saved_transcription.language,
+                        enable_tashkeel=saved_transcription.enable_tashkeel
                     )
 
                     llm_processing_time = time.time() - llm_start_time

@@ -25,6 +25,9 @@ export interface Transcription {
 
   // Voice Activity Detection (VAD) field
   vad_filter_used: boolean;
+
+  // Arabic Tashkeel (Diacritization) field
+  enable_tashkeel: boolean;
 }
 
 /**

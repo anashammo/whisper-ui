@@ -45,7 +45,8 @@ class LLMEnhancementServiceImpl(LLMEnhancementService):
     async def enhance_transcription(
         self,
         text: str,
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        enable_tashkeel: bool = False
     ) -> Dict[str, Any]:
         """
         Enhance transcription using LLM agent.
@@ -56,6 +57,7 @@ class LLMEnhancementServiceImpl(LLMEnhancementService):
         Args:
             text: Original transcription text from Whisper
             language: Optional language code
+            enable_tashkeel: Whether to add Arabic diacritics (only applies if text is Arabic)
 
         Returns:
             Dictionary containing:
@@ -71,4 +73,4 @@ class LLMEnhancementServiceImpl(LLMEnhancementService):
             raise ValueError("Transcription text cannot be empty")
 
         # Delegate to agent
-        return await self.agent.enhance(text, language)
+        return await self.agent.enhance(text, language, enable_tashkeel)

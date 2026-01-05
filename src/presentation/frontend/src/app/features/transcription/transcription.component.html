@@ -312,6 +312,14 @@
           </label>
         </div>
 
+        <!-- Arabic Tashkeel Checkbox (only visible when LLM enabled) -->
+        <div class="llm-enhancement-option tashkeel-option" *ngIf="enableLlmEnhancement">
+          <label>
+            <input type="checkbox" [(ngModel)]="enableTashkeel" />
+            Add Arabic Tashkeel (diacritics/vocalization for Arabic text)
+          </label>
+        </div>
+
         <!-- VAD Filter Checkbox -->
         <div class="llm-enhancement-option">
           <label>

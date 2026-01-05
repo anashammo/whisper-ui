@@ -134,7 +134,8 @@ class TranscribeAudioUseCase:
             error_message=None,
             model=upload_dto.model or "base",
             enable_llm_enhancement=upload_dto.enable_llm_enhancement,
-            vad_filter_used=upload_dto.vad_filter
+            vad_filter_used=upload_dto.vad_filter,
+            enable_tashkeel=upload_dto.enable_tashkeel
         )
 
         # Step 6: Persist transcription (PENDING status)
@@ -184,7 +185,8 @@ class TranscribeAudioUseCase:
                     # Call LLM enhancement service
                     llm_result = await self.llm_service.enhance_transcription(
                         text=saved_transcription.text,
-                        language=saved_transcription.language
+                        language=saved_transcription.language,
+                        enable_tashkeel=saved_transcription.enable_tashkeel
                     )
 
                     llm_processing_time = time.time() - llm_start_time

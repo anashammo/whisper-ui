@@ -54,7 +54,9 @@ class SQLiteTranscriptionRepository(TranscriptionRepository):
             llm_enhancement_status=model.llm_enhancement_status,
             llm_error_message=model.llm_error_message,
             # VAD field
-            vad_filter_used=model.vad_filter_used
+            vad_filter_used=model.vad_filter_used,
+            # Tashkeel field
+            enable_tashkeel=model.enable_tashkeel
         )
 
     def _to_model(self, entity: Transcription) -> TranscriptionModel:
@@ -86,7 +88,9 @@ class SQLiteTranscriptionRepository(TranscriptionRepository):
             llm_enhancement_status=entity.llm_enhancement_status,
             llm_error_message=entity.llm_error_message,
             # VAD field
-            vad_filter_used=entity.vad_filter_used
+            vad_filter_used=entity.vad_filter_used,
+            # Tashkeel field
+            enable_tashkeel=entity.enable_tashkeel
         )
 
     async def create(self, transcription: Transcription) -> Transcription:
@@ -153,6 +157,8 @@ class SQLiteTranscriptionRepository(TranscriptionRepository):
             model.llm_error_message = transcription.llm_error_message
             # VAD field
             model.vad_filter_used = transcription.vad_filter_used
+            # Tashkeel field
+            model.enable_tashkeel = transcription.enable_tashkeel
 
             self.db.commit()
             self.db.refresh(model)

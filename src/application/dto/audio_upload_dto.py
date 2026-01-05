@@ -18,6 +18,7 @@ class AudioUploadDTO:
     model: Optional[str] = "base"  # Whisper model: tiny, base, small, medium, large, turbo
     enable_llm_enhancement: bool = False  # Whether to enable LLM enhancement for this transcription
     vad_filter: bool = False  # Whether to enable Voice Activity Detection (filters silence)
+    enable_tashkeel: bool = False  # Whether to add Arabic diacritics during LLM enhancement
 
     def __post_init__(self):
         """Validate DTO after initialization"""

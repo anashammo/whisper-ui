@@ -21,14 +21,16 @@ class LLMEnhancementService(ABC):
     async def enhance_transcription(
         self,
         text: str,
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        enable_tashkeel: bool = False
     ) -> Dict[str, Any]:
         """
         Enhance transcription text using LLM.
 
         Args:
             text: Original transcription text from Whisper
-            language: Optional language code (e.g., 'en', 'es', 'fr')
+            language: Optional language code (e.g., 'en', 'es', 'fr', 'ar')
+            enable_tashkeel: Whether to add Arabic diacritics (only applies if text is Arabic)
 
         Returns:
             Dictionary containing:

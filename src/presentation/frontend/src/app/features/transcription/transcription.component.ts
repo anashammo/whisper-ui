@@ -33,6 +33,7 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
   isRetranscribing: boolean = false;
   enableLlmEnhancement: boolean = false;
   enableVadFilter: boolean = false;
+  enableTashkeel: boolean = false;
 
   // Supported languages (same as upload component)
   languages = [
@@ -568,6 +569,7 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
     this.isRetranscribing = false;
     this.enableLlmEnhancement = false;
     this.enableVadFilter = false;
+    this.enableTashkeel = false;
   }
 
   /**
@@ -600,7 +602,8 @@ export class TranscriptionComponent implements OnInit, OnDestroy {
       this.selectedModel,
       this.selectedLanguage || undefined,
       this.enableLlmEnhancement,
-      this.enableVadFilter
+      this.enableVadFilter,
+      this.enableTashkeel
     ).pipe(takeUntil(this.destroy$))
     .subscribe({
       next: (newTranscription) => {

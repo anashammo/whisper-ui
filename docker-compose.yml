@@ -106,6 +106,64 @@ services:
     networks:
       - whisper-network
 
+  # Ngrok Tunnel for Backend API (external access)
+  ngrok-whisper-backend:
+    image: ngrok/ngrok:latest
+    container_name: ngrok-whisper-backend
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command: http host.docker.internal:8001 --url=anas-hammo-whisper-backend.ngrok.dev
+    ports:
+      - "4050:4040"  # Ngrok web inspection UI (4050 to avoid conflict with other services)
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - whisper-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    profiles:
+      - ngrok
+
+  # Ngrok Tunnel for Frontend (external access)
+  ngrok-whisper-frontend:
+    image: ngrok/ngrok:latest
+    container_name: ngrok-whisper-frontend
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command: http host.docker.internal:4200 --url=anas-hammo-whisper-frontend.ngrok.dev
+    ports:
+      - "4051:4040"  # Ngrok web inspection UI (4051 to avoid conflict with other services)
+    depends_on:
+      frontend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - whisper-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    profiles:
+      - ngrok
+
+  # Ngrok Tunnel for LLM Service (external access to local LLM like LM Studio/Ollama)
+  # Note: No depends_on since LLM runs on host machine, not in Docker
+  ngrok-whisper-llm:
+    image: ngrok/ngrok:latest
+    container_name: ngrok-whisper-llm
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    command: http host.docker.internal:1234 --url=anas-hammo-whisper-llm.ngrok.dev
+    ports:
+      - "4052:4040"  # Ngrok web inspection UI (4052 to avoid conflict with other services)
+    restart: unless-stopped
+    networks:
+      - whisper-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    profiles:
+      - ngrok
+
 volumes:
   postgres-data:
     driver: local

@@ -18,7 +18,7 @@ export class ApiService {
   /**
    * Upload and transcribe an audio file
    */
-  uploadAudio(file: File, language?: string, model?: string, enableLlmEnhancement?: boolean, vadFilter?: boolean): Observable<Transcription> {
+  uploadAudio(file: File, language?: string, model?: string, enableLlmEnhancement?: boolean, vadFilter?: boolean, enableTashkeel?: boolean): Observable<Transcription> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -34,6 +34,9 @@ export class ApiService {
     }
     if (vadFilter !== undefined) {
       params = params.set('vad_filter', vadFilter.toString());
+    }
+    if (enableTashkeel !== undefined) {
+      params = params.set('enable_tashkeel', enableTashkeel.toString());
     }
 
     return this.http.post<Transcription>(
@@ -69,7 +72,7 @@ export class ApiService {
   /**
    * Re-transcribe an existing audio file with a different model
    */
-  retranscribeAudio(audioFileId: string, model: string, language?: string, enableLlmEnhancement?: boolean, vadFilter?: boolean): Observable<Transcription> {
+  retranscribeAudio(audioFileId: string, model: string, language?: string, enableLlmEnhancement?: boolean, vadFilter?: boolean, enableTashkeel?: boolean): Observable<Transcription> {
     let params = new HttpParams().set('model', model);
     if (language) {
       params = params.set('language', language);
@@ -79,6 +82,9 @@ export class ApiService {
     }
     if (vadFilter !== undefined) {
       params = params.set('vad_filter', vadFilter.toString());
+    }
+    if (enableTashkeel !== undefined) {
+      params = params.set('enable_tashkeel', enableTashkeel.toString());
     }
 
     return this.http.post<Transcription>(

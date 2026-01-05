@@ -54,6 +54,9 @@ class TranscriptionModel(Base):
     # Voice Activity Detection (VAD) field
     vad_filter_used = Column(Boolean, default=False, nullable=False)
 
+    # Arabic Tashkeel (Diacritization) field
+    enable_tashkeel = Column(Boolean, default=False, nullable=False)
+
     # Relationship with audio file
     audio_file = relationship("AudioFileModel", back_populates="transcriptions")
 

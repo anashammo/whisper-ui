@@ -80,7 +80,8 @@ class EnhanceTranscriptionUseCase:
             # Call LLM enhancement service
             result = await self.llm_service.enhance_transcription(
                 text=transcription.text,
-                language=transcription.language
+                language=transcription.language,
+                enable_tashkeel=transcription.enable_tashkeel
             )
 
             processing_time = time.time() - start_time

@@ -36,6 +36,9 @@ class TranscriptionDTO:
     # Voice Activity Detection (VAD) field
     vad_filter_used: bool = False  # Whether VAD was enabled during transcription
 
+    # Arabic Tashkeel (Diacritization) field
+    enable_tashkeel: bool = False  # Whether to add Arabic diacritics during LLM enhancement
+
     @classmethod
     def from_entity(cls, transcription):
         """
@@ -68,5 +71,7 @@ class TranscriptionDTO:
             llm_enhancement_status=transcription.llm_enhancement_status,
             llm_error_message=transcription.llm_error_message,
             # VAD field
-            vad_filter_used=transcription.vad_filter_used
+            vad_filter_used=transcription.vad_filter_used,
+            # Tashkeel field
+            enable_tashkeel=transcription.enable_tashkeel
         )

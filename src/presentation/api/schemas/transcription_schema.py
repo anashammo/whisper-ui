@@ -30,6 +30,9 @@ class TranscriptionResponse(BaseModel):
     # Voice Activity Detection (VAD) field
     vad_filter_used: bool = False
 
+    # Arabic Tashkeel (Diacritization) field
+    enable_tashkeel: bool = False
+
     class Config:
         from_attributes = True
         json_schema_extra = {
@@ -80,7 +83,9 @@ class TranscriptionResponse(BaseModel):
             llm_enhancement_status=dto.llm_enhancement_status,
             llm_error_message=dto.llm_error_message,
             # VAD field
-            vad_filter_used=dto.vad_filter_used
+            vad_filter_used=dto.vad_filter_used,
+            # Tashkeel field
+            enable_tashkeel=dto.enable_tashkeel
         )
 
 

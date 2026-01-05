@@ -54,6 +54,10 @@ async def create_transcription(
         False,
         description="Enable Voice Activity Detection (filters silence, improves accuracy)"
     ),
+    enable_tashkeel: bool = Query(
+        False,
+        description="Enable Arabic Tashkeel (diacritization) during LLM enhancement. Only applies when enable_llm_enhancement=true and text is Arabic."
+    ),
     use_case: TranscribeAudioUseCase = Depends(get_transcribe_audio_use_case)
 ):
     """
@@ -77,7 +81,8 @@ async def create_transcription(
             language=language,
             model=model or "base",
             enable_llm_enhancement=enable_llm_enhancement,
-            vad_filter=vad_filter
+            vad_filter=vad_filter,
+            enable_tashkeel=enable_tashkeel
         )
 
         # Debug logging

@@ -1,9 +1,9 @@
-# CLAUDE.md — AI Governance & Operating Rules
+# CLAUDE.md - AI Governance & Operating Rules
 
 ## Purpose
 This document defines **mandatory rules** for using Claude CLI as a **senior, autonomous code assistant** in this repository.
 
-These rules are **binding**.  
+These rules are **binding**.
 Violation of any rule means the task is **NOT DONE**.
 
 ---
@@ -207,8 +207,8 @@ Allowed types:
 
 Examples:
 ```
-feat(api): add audit logging
-fix(db): prevent duplicate records
+feat(api): add synthesis endpoint
+fix(tts): prevent voice reference loading error
 docs(readme): update setup steps
 ```
 
@@ -291,7 +291,7 @@ Use sub-agents for context-heavy tasks.
 
 ---
 
-**This file is authoritative.  
+**This file is authoritative.
 Claude must refuse to proceed if these rules are violated.**
 
 ## Project Overview
@@ -339,7 +339,10 @@ src/
 │
 ├── application/                # Use cases orchestrate domain logic
 │   ├── use_cases/             # TranscribeAudioUseCase, RetranscribeAudioUseCase, EnhanceTranscriptionUseCase
-│   └── dto/                   # Data transfer objects for cross-layer communication
+│   ├── dto/                   # Data transfer objects for cross-layer communication
+│   └── enhancement/           # LLM enhancement agent (LangGraph workflow)
+│       ├── prompts.py         # Language-aware prompts (Arabic Tashkeel, standard enhancement)
+│       └── enhancement_agent.py  # LangGraph workflow for LLM calls
 │
 ├── infrastructure/             # External implementations
 │   ├── persistence/
@@ -349,15 +352,15 @@ src/
 │   └── storage/               # LocalFileStorage for audio files
 │
 └── presentation/
-    ├── agent/                 # LangGraph agent for LLM enhancement
-    │   ├── prompts.py        # System and user prompts for LLM
-    │   ├── llm_client.py     # OpenAI-compatible LLM client
-    │   └── enhancement_agent.py  # LangGraph workflow
     ├── api/                   # FastAPI routers, schemas, dependencies
     │   ├── routers/          # transcription_router, audio_file_router, llm_enhancement_router
     │   ├── schemas/          # Pydantic models for request/response
     │   └── dependencies.py   # Dependency injection with @lru_cache for singletons
     └── frontend/             # Angular SPA
+
+infrastructure/
+└── llm/
+    └── llm_client.py         # OpenAI-compatible LLM client for Ollama/LM Studio
 ```
 
 ### Data Flow Example (Re-transcription)
@@ -404,6 +407,9 @@ transcriptions
 
   # Voice Activity Detection (VAD) field (added January 2026)
   - vad_filter_used (boolean, default: false)
+
+  # Arabic Tashkeel (Diacritization) field (added January 2026)
+  - enable_tashkeel (boolean, default: false)
 ```
 
 **UI Features**:
@@ -415,6 +421,7 @@ transcriptions
 - Read-only transcription textareas prevent accidental editing
 - "Enhance with LLM" button for completed transcriptions that opted in
 - LLM enhancement checkbox in upload/recording/re-transcription forms
+- Arabic Tashkeel (diacritization) checkbox in upload/recording/re-transcription forms (only visible when LLM enhancement enabled)
 - VAD (Voice Activity Detection) checkbox in upload/recording/re-transcription forms
 - LLM enhancement status badges in both History and Details views (color-coded: green=completed, blue=processing, red=failed, orange=pending)
 - Enhanced text preview in History view cards (when available)
@@ -440,13 +447,45 @@ transcriptions
    - Mark as processing via `transcription.mark_llm_processing()`
    - Call LLM enhancement service (LangGraph agent)
    - Complete or fail based on result via `transcription.complete_llm_enhancement()` or `transcription.fail_llm_enhancement()`
-4. **LLM Service** (Infrastructure) → calls presentation agent
-5. **Agent** (`enhancement_agent.py`) → LangGraph workflow:
-   - Uses LLM client to call local LLM (Ollama/LM Studio)
-   - Applies enhancement prompts (grammar, formatting, filler removal)
+4. **LLM Service** (Infrastructure) → calls application enhancement agent
+5. **Agent** (`src/application/enhancement/enhancement_agent.py`) → LangGraph workflow:
+   - Detects language (via language code or Arabic script detection)
+   - Selects appropriate prompt from `prompts.py`:
+     - **Arabic**: Full Tashkeel (diacritization) with grammar enhancement
+     - **Other languages**: Standard grammar, punctuation, filler removal
+   - Uses LLM client (`infrastructure/llm/llm_client.py`) to call local LLM (Ollama/LM Studio)
    - Returns enhanced text
 6. **Repository** → persists updated transcription to database (PostgreSQL in Docker, SQLite locally)
 7. **Frontend** → displays dual text areas with original and enhanced text
+
+### Arabic Tashkeel (Diacritization) Support
+
+The LLM enhancement includes optional Arabic diacritization when enabled by the user:
+
+**User Activation**:
+- Enable "Enhance with LLM" checkbox first
+- Then enable "Add Arabic Tashkeel" checkbox (only visible when LLM enabled)
+- Available in upload, recording, and re-transcription forms
+
+**Detection Methods** (when Tashkeel enabled):
+1. Language code check (`ar`, `ara`, `ar-sa`, `ar-eg`, etc.)
+2. Script detection fallback (>20% Arabic Unicode characters)
+
+**Diacritical Marks Applied**:
+- Fatḥah (فَتْحة) - short 'a' vowel
+- Kasrah (كَسْرة) - short 'i' vowel
+- Ḍammah (ضَمَّة) - short 'u' vowel
+- Sukūn (سُكون) - absence of vowel
+- Shaddah (شَدَّة) - consonant doubling
+- Tanwīn (تنوين) - nunation endings
+
+**Implementation Files**:
+- `src/application/enhancement/prompts.py` - Language-aware prompt selection
+- `src/application/enhancement/enhancement_agent.py` - LangGraph workflow
+
+**Example**:
+- Input: `السلام عليكم ورحمة الله وبركاته`
+- Output: `السَّلَامُ عَلَيْكُمْ وَرَحْمَةُ اللهِ وَبَرَكَاتُهُ`
 
 ## Development Commands
 
@@ -536,24 +575,43 @@ mypy src/
 **IMPORTANT**: Docker deployment uses PostgreSQL for ALL environments (development and production), not SQLite.
 
 ```bash
-# Quick start
+# Quick start (core services only)
 cp .env.docker .env
 python scripts/docker/run.py --build
 
+# Start with ngrok tunnels (requires NGROK_AUTHTOKEN in .env)
+python scripts/docker/run.py --build --ngrok
+
 # Management scripts (scripts/docker/)
 python scripts/docker/build.py              # Build images
-python scripts/docker/run.py                # Start services
-python scripts/docker/stop.py               # Stop services
-python scripts/docker/logs.py --follow      # View logs
+python scripts/docker/run.py                # Start core services
+python scripts/docker/run.py --ngrok        # Start with ngrok tunnels
+python scripts/docker/stop.py               # Stop all services
+python scripts/docker/stop.py --ngrok-only  # Stop only ngrok tunnels
+python scripts/docker/logs.py --follow      # View core service logs
+python scripts/docker/logs.py --ngrok -f    # View all logs including ngrok
 python scripts/docker/shell.py backend      # Open shell in backend
 python scripts/docker/clean.py --all        # Clean all resources
-python scripts/docker/rebuild.py            # Rebuild and restart
+python scripts/docker/rebuild.py            # Rebuild core services
+python scripts/docker/rebuild.py --ngrok    # Rebuild with ngrok tunnels
 ```
 
 **Docker Architecture**:
 - **postgres**: PostgreSQL 15 (port 5432 internal, volume: postgres-data)
 - **backend**: FastAPI + CUDA 12.8 (port 8001, volumes: whisper-uploads, huggingface-cache, source code for hot-reload)
 - **frontend**: Angular ng serve (port 4200, volume: source code for hot-reload)
+
+**Ngrok Tunnels** (optional, use `--ngrok` flag):
+- **ngrok-whisper-backend**: Tunnel for backend API → https://anas-hammo-whisper-backend.ngrok.dev
+- **ngrok-whisper-frontend**: Tunnel for frontend → https://anas-hammo-whisper-frontend.ngrok.dev
+- **ngrok-whisper-llm**: Tunnel for LLM service → https://anas-hammo-whisper-llm.ngrok.dev
+
+**Ngrok Web Inspection UI** (for debugging requests):
+- Backend: http://localhost:4050
+- Frontend: http://localhost:4051
+- LLM: http://localhost:4052
+
+**Docker Profiles**: Ngrok services use Docker Compose profiles (`profiles: - ngrok`). They only start when explicitly requested with `--ngrok` flag, which translates to `docker-compose --profile ngrok up`.
 
 **Hot-Reload**: Source code mounted as read-only volumes, changes auto-detected without rebuild
 
@@ -565,6 +623,9 @@ python scripts/docker/rebuild.py            # Rebuild and restart
 - The Dockerfile uses CUDA 12.8 base images for compatibility with latest GPUs
 
 **Volume Persistence**: All data (database, uploads, models) in named volumes, never in container images
+
+**Environment Variables for Ngrok**:
+- `NGROK_AUTHTOKEN`: Required for ngrok authentication. Get from https://dashboard.ngrok.com/get-started/your-authtoken
 
 ## Key Implementation Patterns
 

@@ -10,6 +10,7 @@ Complete guide for deploying the Whisper transcription system using Docker and D
 - [Architecture](#architecture)
 - [Environment Configuration](#environment-configuration)
 - [Management Scripts](#management-scripts)
+- [Ngrok Tunnels](#ngrok-tunnels)
 - [Volume Management](#volume-management)
 - [GPU Configuration](#gpu-configuration)
 - [Hot-Reload Development](#hot-reload-development)
@@ -372,7 +373,7 @@ python scripts/docker/build.py --backend --no-cache
 #### run.py - Start Services
 
 ```bash
-# Start all services (use existing images)
+# Start core services (postgres, backend, frontend)
 python scripts/docker/run.py
 
 # Build and start
@@ -383,14 +384,22 @@ python scripts/docker/run.py --detach
 
 # Build and run in background
 python scripts/docker/run.py --build --detach
+
+# Start with ngrok tunnels (requires NGROK_AUTHTOKEN in .env)
+python scripts/docker/run.py --ngrok
+
+# Build and start with ngrok tunnels
+python scripts/docker/run.py --build --ngrok --detach
 ```
 
 **Options**:
 - `--build`: Build images before starting
 - `--detach`: Run in background
+- `--ngrok`: Include ngrok tunnel services (requires NGROK_AUTHTOKEN)
 
 **Behavior**:
-- Starts all services defined in `docker-compose.yml`
+- Starts core services defined in `docker-compose.yml`
+- With `--ngrok`, also starts ngrok tunnel services via Docker profiles
 - Creates volumes if they don't exist
 - Waits for health checks to pass
 - Streams logs to console (unless `--detach`)
@@ -398,16 +407,20 @@ python scripts/docker/run.py --build --detach
 #### stop.py - Stop Services
 
 ```bash
-# Stop containers (keep volumes)
+# Stop all containers (keep volumes)
 python scripts/docker/stop.py
 
 # Stop containers and remove volumes (WARNING: deletes all data)
 python scripts/docker/stop.py --remove-volumes
 python scripts/docker/stop.py -v
+
+# Stop only ngrok tunnel services (keep core services running)
+python scripts/docker/stop.py --ngrok-only
 ```
 
 **Options**:
 - `-v, --remove-volumes`: Remove volumes (deletes database, uploads, models)
+- `--ngrok-only`: Stop only ngrok tunnel services
 
 **Confirmation Required**:
 - Asks for confirmation before removing volumes
@@ -416,21 +429,27 @@ python scripts/docker/stop.py -v
 #### rebuild.py - Rebuild and Restart
 
 ```bash
-# Stop, rebuild, and restart all services
+# Stop, rebuild, and restart core services
 python scripts/docker/rebuild.py
+
+# Stop, rebuild, and restart with ngrok tunnels
+python scripts/docker/rebuild.py --ngrok
 ```
+
+**Options**:
+- `--ngrok`: Include ngrok tunnel services after rebuild
 
 **Workflow**:
 1. Stops all containers
 2. Rebuilds images
-3. Starts containers
+3. Starts containers (with ngrok if `--ngrok` flag used)
 4. Exits with success/failure status
 
 **Equivalent to**:
 ```bash
 python scripts/docker/stop.py
 python scripts/docker/build.py
-python scripts/docker/run.py
+python scripts/docker/run.py           # or run.py --ngrok
 ```
 
 ### Debugging Scripts
@@ -438,13 +457,19 @@ python scripts/docker/run.py
 #### logs.py - View Logs
 
 ```bash
-# View all service logs
+# View core service logs
 python scripts/docker/logs.py
+
+# View all logs including ngrok
+python scripts/docker/logs.py --ngrok
 
 # View specific service logs
 python scripts/docker/logs.py backend
 python scripts/docker/logs.py frontend
 python scripts/docker/logs.py postgres
+python scripts/docker/logs.py ngrok-whisper-backend
+python scripts/docker/logs.py ngrok-whisper-frontend
+python scripts/docker/logs.py ngrok-whisper-llm
 
 # Follow logs (live stream)
 python scripts/docker/logs.py --follow
@@ -456,17 +481,20 @@ python scripts/docker/logs.py backend --tail 50
 
 # Combine options
 python scripts/docker/logs.py backend --follow --tail 100
+python scripts/docker/logs.py --ngrok -f --tail 100
 ```
 
 **Options**:
-- `service`: Service name (backend, frontend, postgres)
+- `service`: Service name (backend, frontend, postgres, ngrok-whisper-backend, ngrok-whisper-frontend, ngrok-whisper-llm)
 - `-f, --follow`: Follow log output (live stream)
 - `--tail N`: Show last N lines
+- `--ngrok`: Include ngrok services in logs
 
 **Use Cases**:
 - Check startup: `python scripts/docker/logs.py backend --tail 50`
 - Debug issues: `python scripts/docker/logs.py backend --follow`
 - Monitor all: `python scripts/docker/logs.py --follow`
+- Monitor with ngrok: `python scripts/docker/logs.py --ngrok -f`
 
 #### shell.py - Open Container Shell
 
@@ -549,6 +577,79 @@ python scripts/docker/clean.py --all
 - Free disk space: `python scripts/docker/clean.py --images`
 - Complete reset: `python scripts/docker/clean.py --all` (then rebuild from scratch)
 - Remove old data: `python scripts/docker/clean.py --volumes`
+
+## Ngrok Tunnels
+
+Ngrok tunnels provide external access to your local Docker services via public URLs. These are optional and controlled via Docker Compose profiles.
+
+### Overview
+
+Three ngrok tunnel services are available:
+
+| Service | Target | Public URL | Web UI |
+|---------|--------|------------|--------|
+| `ngrok-whisper-backend` | Backend API (port 8001) | https://anas-hammo-whisper-backend.ngrok.dev | http://localhost:4050 |
+| `ngrok-whisper-frontend` | Frontend (port 4200) | https://anas-hammo-whisper-frontend.ngrok.dev | http://localhost:4051 |
+| `ngrok-whisper-llm` | LLM service (port 1234) | https://anas-hammo-whisper-llm.ngrok.dev | http://localhost:4052 |
+
+### Configuration
+
+1. **Get your ngrok auth token** from https://dashboard.ngrok.com/get-started/your-authtoken
+
+2. **Add to your `.env` file**:
+   ```bash
+   NGROK_AUTHTOKEN=your_token_here
+   ```
+
+3. **Reserved domains**: The tunnel URLs require ngrok reserved domains configured in your ngrok account.
+
+### Usage
+
+```bash
+# Start core services + ngrok tunnels
+python scripts/docker/run.py --ngrok
+
+# Build and start with ngrok
+python scripts/docker/run.py --build --ngrok --detach
+
+# Rebuild with ngrok tunnels
+python scripts/docker/rebuild.py --ngrok
+
+# Stop only ngrok (keep core services running)
+python scripts/docker/stop.py --ngrok-only
+
+# View ngrok logs
+python scripts/docker/logs.py ngrok-whisper-backend -f
+python scripts/docker/logs.py --ngrok -f
+```
+
+### Docker Profiles
+
+Ngrok services use Docker Compose profiles (`profiles: - ngrok`). This means:
+
+- **Default**: Ngrok services are NOT started with regular `docker-compose up`
+- **With profile**: Use `docker-compose --profile ngrok up` to include them
+- **Scripts**: The `--ngrok` flag in Python scripts handles this automatically
+
+### Web Inspection UI
+
+Each ngrok tunnel exposes a web inspection UI for debugging HTTP requests:
+
+- **Backend inspector**: http://localhost:4050
+- **Frontend inspector**: http://localhost:4051
+- **LLM inspector**: http://localhost:4052
+
+These UIs show:
+- All HTTP requests/responses
+- Request headers and body
+- Response timing
+- Replay functionality for debugging
+
+### Dependencies
+
+- `ngrok-whisper-backend`: Waits for backend to be healthy before starting
+- `ngrok-whisper-frontend`: Waits for frontend to be healthy before starting
+- `ngrok-whisper-llm`: Starts immediately (LLM runs on host, not in Docker)
 
 ## Volume Management
 

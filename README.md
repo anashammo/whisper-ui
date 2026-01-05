@@ -331,19 +331,22 @@ python scripts/docker/build.py --frontend   # Build frontend only
 python scripts/docker/build.py --no-cache   # Clean build
 
 # Run services
-python scripts/docker/run.py                # Start all services
+python scripts/docker/run.py                # Start core services
 python scripts/docker/run.py --build        # Build and start
 python scripts/docker/run.py --detach       # Run in background
+python scripts/docker/run.py --ngrok        # Include ngrok tunnels (requires NGROK_AUTHTOKEN)
 
 # View logs
-python scripts/docker/logs.py               # All services
+python scripts/docker/logs.py               # Core service logs
 python scripts/docker/logs.py backend       # Backend only
 python scripts/docker/logs.py --follow      # Follow logs
 python scripts/docker/logs.py --tail 100    # Last 100 lines
+python scripts/docker/logs.py --ngrok -f    # Include ngrok logs
 
 # Stop services
-python scripts/docker/stop.py               # Stop containers
+python scripts/docker/stop.py               # Stop all containers
 python scripts/docker/stop.py -v            # Stop and remove volumes (WARNING: deletes data)
+python scripts/docker/stop.py --ngrok-only  # Stop only ngrok tunnels
 
 # Open shell in container
 python scripts/docker/shell.py backend      # Backend shell
@@ -357,8 +360,33 @@ python scripts/docker/clean.py --volumes    # Remove volumes (WARNING: deletes d
 python scripts/docker/clean.py --all        # Remove everything (WARNING)
 
 # Rebuild and restart
-python scripts/docker/rebuild.py            # Stop, rebuild, and restart
+python scripts/docker/rebuild.py            # Stop, rebuild, and restart core services
+python scripts/docker/rebuild.py --ngrok    # Rebuild with ngrok tunnels
 ```
+
+### Ngrok Tunnels (Optional)
+
+For external access via public URLs, use ngrok tunnels:
+
+```bash
+# Set your ngrok auth token in .env
+NGROK_AUTHTOKEN=your_token_here
+
+# Start with ngrok
+python scripts/docker/run.py --ngrok --build --detach
+```
+
+**Public URLs** (requires reserved domains in ngrok account):
+- Backend: https://anas-hammo-whisper-backend.ngrok.dev
+- Frontend: https://anas-hammo-whisper-frontend.ngrok.dev
+- LLM: https://anas-hammo-whisper-llm.ngrok.dev
+
+**Web Inspection UI** (for debugging):
+- Backend: http://localhost:4050
+- Frontend: http://localhost:4051
+- LLM: http://localhost:4052
+
+See [DOCKER.md](DOCKER.md#ngrok-tunnels) for detailed ngrok configuration.
 
 ### Docker Architecture
 

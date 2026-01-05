@@ -2,17 +2,22 @@
 
 This module implements a simple LangGraph agent for enhancing transcriptions
 using a local LLM.
+
+Supports language-specific enhancement:
+- Standard enhancement for most languages (grammar, punctuation, filler removal)
+- Arabic-specific enhancement with full Tashkeel (diacritization) support
 """
 from typing import Dict, Any, Optional, TypedDict
 from langgraph.graph import StateGraph, END
 from ...infrastructure.llm.llm_client import LLMClient
-from .prompts import ENHANCEMENT_SYSTEM_PROMPT, ENHANCEMENT_USER_PROMPT_TEMPLATE
+from .prompts import get_system_prompt, get_user_prompt
 
 
 class EnhancementState(TypedDict):
     """State for the enhancement agent"""
     transcription: str
     language: Optional[str]
+    enable_tashkeel: bool  # Whether to add Arabic diacritics
     enhanced_text: str
     error: Optional[str]
 
@@ -66,6 +71,10 @@ class EnhancementAgent:
         """
         Enhancement node - calls LLM with prompt.
 
+        Selects appropriate prompt based on language and Tashkeel setting:
+        - Arabic with Tashkeel enabled: Full diacritization + grammar enhancement
+        - Other cases: Standard grammar/punctuation/filler removal
+
         Args:
             state: Current agent state
 
@@ -73,14 +82,27 @@ class EnhancementAgent:
             Updated state with enhanced text or error
         """
         try:
-            # Format user prompt with transcription
-            user_prompt = ENHANCEMENT_USER_PROMPT_TEMPLATE.format(
-                transcription=state["transcription"]
+            transcription = state["transcription"]
+            language = state.get("language")
+            enable_tashkeel = state.get("enable_tashkeel", False)
+
+            # Get appropriate prompts based on language and Tashkeel setting
+            # For Arabic with Tashkeel: includes full diacritization instructions
+            # For others: standard grammar/punctuation/filler removal
+            system_prompt = get_system_prompt(
+                language=language,
+                text=transcription,
+                enable_tashkeel=enable_tashkeel
+            )
+            user_prompt = get_user_prompt(
+                transcription=transcription,
+                language=language,
+                enable_tashkeel=enable_tashkeel
             )
 
             # Call LLM
             enhanced_text = await self.llm_client.complete(
-                system_prompt=ENHANCEMENT_SYSTEM_PROMPT,
+                system_prompt=system_prompt,
                 user_prompt=user_prompt
             )
 
@@ -102,14 +124,16 @@ class EnhancementAgent:
     async def enhance(
         self,
         transcription: str,
-        language: Optional[str] = None
+        language: Optional[str] = None,
+        enable_tashkeel: bool = False
     ) -> Dict[str, Any]:
         """
         Enhance transcription text.
 
         Args:
             transcription: Original transcription text from Whisper
-            language: Optional language code (e.g., 'en', 'es')
+            language: Optional language code (e.g., 'en', 'es', 'ar')
+            enable_tashkeel: Whether to add Arabic diacritics (only applies if text is Arabic)
 
         Returns:
             Dictionary with 'enhanced_text' and 'metadata'
@@ -121,6 +145,7 @@ class EnhancementAgent:
         initial_state: EnhancementState = {
             "transcription": transcription,
             "language": language,
+            "enable_tashkeel": enable_tashkeel,
             "enhanced_text": "",
             "error": None
         }
@@ -137,6 +162,7 @@ class EnhancementAgent:
             "enhanced_text": final_state["enhanced_text"],
             "metadata": {
                 "language": language,
+                "enable_tashkeel": enable_tashkeel,
                 "original_length": len(transcription),
                 "enhanced_length": len(final_state["enhanced_text"])
             }
