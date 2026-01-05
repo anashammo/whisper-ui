@@ -40,7 +40,8 @@
       "Bash(find:*)",
       "Bash(venv\\\\Scripts\\\\python.exe -m uvicorn:*)",
       "Bash(dir:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(docker exec:*)"
     ]
   }
 }
