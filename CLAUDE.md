@@ -1,4 +1,10 @@
-# CLAUDE.md - AI Governance & Operating Rules
+# File Structure
+This document contains two major sections (Governance & Operating Rules) and (Whisper Project).
+
+**This file is authoritative.
+Claude must refuse to proceed if these rules are violated.**
+
+# Governance & Operating Rules
 
 ## Purpose
 This document defines **mandatory rules** for using Claude CLI as a **senior, autonomous code assistant** in this repository.
@@ -41,7 +47,6 @@ Before writing any code:
 - Review **all documentation**:
   - `README.md`
   - This `CLAUDE.md`
-  - All relevant `*.md` files
 
 ---
 
@@ -132,7 +137,6 @@ After:
 You **must review and update**:
 - `README.md`
 - `CLAUDE.md`
-- All relevant `*.md` files
 - `scripts/`
 - `src/presentation/api/.env.example` (backend env template)
 
@@ -226,19 +230,6 @@ docs(readme): update setup steps
 
 ---
 
-## Operating Modes
-
-### Autonomous Mode (Default)
-- Claude proceeds independently
-- Asks questions only for critical ambiguity
-
-### Assisted Mode
-- Claude pauses at major decisions
-- Presents options
-- Waits for user selection
-
----
-
 ## Definition of Done (ALL Required)
 - Feature implemented as planned
 - No regressions
@@ -265,24 +256,6 @@ If no plan exists → recreate it before coding.
 
 ---
 
-## Sub-Agent Usage Rules
-
-Use sub-agents for context-heavy tasks.
-
-### Allowed Sub-Agents
-- Codebase Scanner
-- Documentation Seen
-- Dependency / GPU Research
-- Script & Automation
-- Test & Validation
-
-### Rules
-- Sub-agents summarize only
-- No verbose logs
-- Main agent integrates results
-
----
-
 ## Enforcement
 - Missing plan → STOP
 - Missing documentation → NOT DONE
@@ -291,8 +264,7 @@ Use sub-agents for context-heavy tasks.
 
 ---
 
-**This file is authoritative.
-Claude must refuse to proceed if these rules are violated.**
+# Whisper Project 
 
 ## Project Overview
 

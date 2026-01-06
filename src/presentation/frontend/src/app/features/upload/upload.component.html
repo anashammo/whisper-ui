@@ -104,7 +104,7 @@
           (click)="isPlayingRecording ? stopRecordingPlayback() : playRecording()"
           [title]="isPlayingRecording ? 'Stop' : 'Play'"
         >
-          {{ isPlayingRecording ? '⏹️' : '▶️' }}
+          {{ isPlayingRecording ? '■' : '▶' }}
         </button>
         <button class="btn btn-icon" (click)="cancelRecording()" title="Delete">
           🗑️
@@ -179,7 +179,7 @@
           (click)="isPlayingFile ? stopFile() : playFile()"
           [title]="isPlayingFile ? 'Stop' : 'Play audio'"
         >
-          {{ isPlayingFile ? '⏹️' : '▶️' }}
+          {{ isPlayingFile ? '■' : '▶' }}
         </button>
         <button class="btn-remove" (click)="clearFile()">✕</button>
       </div>
