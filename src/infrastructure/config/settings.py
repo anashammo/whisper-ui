@@ -59,7 +59,7 @@ class Settings(BaseSettings):
 
     # LLM Configuration
     llm_base_url: str = Field(
-        default="http://localhost:11434/v1",
+        default="https://anas-hammo-llm.ngrok.dev/v1",
         description="Base URL for LLM API (OpenAI-compatible, e.g., Ollama)"
     )
     llm_model: str = Field(
